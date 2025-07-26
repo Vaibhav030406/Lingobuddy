@@ -1,3 +1,4 @@
+import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
@@ -21,14 +22,27 @@ export const signup = async (req, res) => {
       if (!process.env.JWT_SECRET_KEY) {
          return res.status(500).json({ message: "JWT secret key is not defined" });
       }
-      const idx = Math.floor(Math.random() * 100) + 1;
-      const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+   const firstInitial = fullName.trim().charAt(0).toUpperCase();
+    
+      const randomAvatar = `https://avatar.iran.liara.run/username?username=${firstInitial}`;
       const newUser = await User.create({
          fullName, // Changed 'username' to 'fullName'
          email,
          password,
          profilePicture: randomAvatar,
       });
+
+      try{
+        await upsertStreamUser({
+            id: newUser._id.toString(),
+            name: newUser.fullName,
+            image: newUser.profilePicture || "",
+        });
+        console.log(`Stream user created for ${newUser.fullName}`);
+      }
+        catch(error){
+        console.error("Error upserting Stream user:", error);
+        }
       const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
          expiresIn: '7d'
       });
@@ -79,4 +93,34 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
    res.clearCookie("jwt");
    res.status(200).json({ success: true, message: "User logged out successfully" });
+};
+export const onboard = async (req, res) => {
+    try{
+        const userId = req.user._id;
+        const {fullName,bio,nativeLanguage,learningLanguage,location} = req.body;
+        if(!fullName || !bio || !nativeLanguage || !learningLanguage || !location){
+            return res.status(400).json({message: "Please fill all the fields"})
+        }
+        const updatedUser = await User.findByIdAndUpdate(userId, {
+        ...req.body,
+        isOnboarded: true
+    }, { new: true });
+        if(!updatedUser){
+            return res.status(404).json({message: "User not found"})
+        }
+        try{
+            await upsertStreamUser({
+                id: updatedUser._id.toString(),
+                name: updatedUser.fullName,
+                image: updatedUser.profilePicture || "",
+            })
+            console.log(`Stream user upserted for ${updatedUser.fullName}`);
+        } catch (error) {
+            console.error("Error upserting Stream user:", error);
+        }
+        res.status(200).json({success: true, message: "User onboarded successfully", user: updatedUser});
+    } catch (error) {
+        console.error("Error during onboarding:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
 };
