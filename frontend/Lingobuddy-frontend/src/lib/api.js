@@ -6,8 +6,13 @@ export const signup = async (signupData) => {
 };
 
 export const getAuthUser = async () => {
+  try{
   const response = await instance.get("/auth/me");
   return response.data;
+  }
+  catch (error) {
+    return null;
+  }
 };
 
 export const completeOnboarding = async (onboardingData) => {
@@ -17,5 +22,10 @@ export const completeOnboarding = async (onboardingData) => {
 
 export const login = async (logindata) =>{
   const response = await instance.post("/auth/login", logindata);
+  return response.data;
+}
+
+export const logout = async () =>{
+  const response = await instance.post("/auth/logout");
   return response.data;
 }
