@@ -97,7 +97,7 @@ export const logout = async (req, res) => {
 export const onboard = async (req, res) => {
     try{
         const userId = req.user._id;
-        const {fullName,bio,nativeLanguage,learningLanguage,location} = req.body;
+        const {fullName,bio,nativeLanguage,learningLanguage,location,profilePicture} = req.body;
         if(!fullName || !bio || !nativeLanguage || !learningLanguage || !location){
             return res.status(400).json({message: "Please fill all the fields"})
         }
