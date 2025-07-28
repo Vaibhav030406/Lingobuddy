@@ -11,6 +11,7 @@ import useAuthUser from './hooks/useAuthUser';
 import PageLoader from './components/PageLoader';
 import Layout from './components/Layout';
 
+// ✅ No need to use `theme` here anymore
 export default function App() {
   const { isLoading, authUser } = useAuthUser();
 
@@ -20,7 +21,7 @@ export default function App() {
   const isOnboarded = authUser?.isOnboarded;
 
   return (
-    <div className="flex flex-col min-h-screen" data-theme="forest">
+    <div className="flex flex-col min-h-screen bg-[var(--background)] text-[var(--text)]">
       <div className="flex-grow">
         <Routes>
           <Route

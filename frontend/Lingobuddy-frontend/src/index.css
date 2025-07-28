@@ -2,8 +2,207 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* Default fallback */
+:root {
+  --primary: #3b82f6;
+  --background: #ffffff;
+  --text: #111827;
+}
+
+html, body {
+  background-color: var(--background);
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.theme-light {
+  --primary: #3b82f6;
+  --background: #ffffff;
+  --text: #111827;
+}
+
+.theme-dark {
+  --primary: #8b5cf6;
+  --background: #1f2937;
+  --text: #f9fafb;
+}
+
+.theme-cupcake {
+  --primary: #65c3c8;
+  --background: #f5f5f4;
+  --text: #291334;
+}
+
+.theme-forest {
+  --primary: #70c217;
+  --background: #1f1d1d;
+  --text: #f0fdf4;
+}
+
+.theme-bumblebee {
+  --primary: #f0d50c;
+  --background: #ffffff;
+  --text: #1c1917;
+}
+
+.theme-emerald {
+  --primary: #66cc8a;
+  --background: #ffffff;
+  --text: #1e3a8a;
+}
+
+.theme-corporate {
+  --primary: #4b6bfb;
+  --background: #ffffff;
+  --text: #1d232a;
+}
+
+.theme-synthwave {
+  --primary: #e779c1;
+  --background: #2d1b69;
+  --text: #f8f8f2;
+}
+
+.theme-retro {
+  --primary: #ea6962;
+  --background: #e4d8b4;
+  --text: #282425;
+}
+
+.theme-cyberpunk {
+  --primary: #ff7598;
+  --background: #ffee00;
+  --text: #1a103d;
+}
+
+.theme-valentine {
+  --primary: #e96d7b;
+  --background: #f0d6e8;
+  --text: #37243c;
+}
+
+.theme-halloween {
+  --primary: #ff7800;
+  --background: #0d0d0d;
+  --text: #ffffff;
+}
+
+.theme-garden {
+  --primary: #16a34a;
+  --background: #e9e7e7;
+  --text: #374151;
+}
+
+.theme-aqua {
+  --primary: #4cd4e3;
+  --background: #193549;
+  --text: #f8d766;
+}
+
+.theme-lofi {
+  --primary: #232323;
+  --background: #0f0f0f;
+  --text: #f1f1f1;
+}
+
+.theme-pastel {
+  --primary: #a1e3d8;
+  --background: #f7f3f5;
+  --text: #4a98f1;
+}
+
+.theme-fantasy {
+  --primary: #a21caf;
+  --background: #ffe7d6;
+  --text: #f59e0b;
+}
+
+.theme-wireframe {
+  --primary: #b3b3b3;
+  --background: #e6e6e6;
+  --text: #888888;
+}
+
+.theme-black {
+  --primary: #313131;
+  --background: #000000;
+  --text: #ffffff;
+}
+
+.theme-luxury {
+  --primary: #d4a85a;
+  --background: #171618;
+  --text: #ffffff;
+}
+
+.theme-dracula {
+  --primary: #bd93f9;
+  --background: #282a36;
+  --text: #f8f8f2;
+}
+
+.theme-cmyk {
+  --primary: #ec4899;
+  --background: #f0f0f0;
+  --text: #0891b2;
+}
+
+.theme-autumn {
+  --primary: #f28c18;
+  --background: #f2f2f2;
+  --text: #6f4930;
+}
+
+.theme-business {
+  --primary: #1e40af;
+  --background: #f5f5f5;
+  --text: #f97316;
+}
+
+.theme-acid {
+  --primary: #ff00f2;
+  --background: #110e0e;
+  --text: #99ff01;
+}
+
+.theme-lemonade {
+  --primary: #f5d742;
+  --background: #ffffff;
+  --text: #2c3333;
+}
+
+.theme-night {
+  --primary: #818cf8;
+  --background: #0f172a;
+  --text: #e2e8f0;
+}
+
+.theme-coffee {
+  --primary: #dd9866;
+  --background: #20161f;
+  --text: #eeeeee;
+}
+
+.theme-winter {
+  --primary: #0284c7;
+  --background: #ffffff;
+  --text: #0f172a;
+}
+
+.theme-dim {
+  --primary: #10b981;
+  --background: #1c1c27;
+  --text: #ffffff;
+}
+
+.theme-nord {
+  --primary: #5e81ac;
+  --background: #eceff4;
+  --text: #3b4252;
+}
+
+.theme-sunset {
+  --primary: #f5734c;
+  --background: #1e293b;
+  --text: #f1f5f9;
 }
