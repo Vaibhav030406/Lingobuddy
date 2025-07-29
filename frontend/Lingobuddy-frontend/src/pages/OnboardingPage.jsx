@@ -8,14 +8,21 @@ import {
   ShipWheelIcon,
   ShuffleIcon,
   CameraIcon,
-  Dessert,
+  Languages,
+  Sparkles,
+  User,
+  MessageSquare,
+  Globe,
+  ArrowRight,
 } from "lucide-react";
 import { LANGUAGES } from "../constants";
 import { completeOnboarding } from "../lib/api";
+import { useThemeSelector } from "../hooks/useThemeSelector";
 
 const OnboardingPage = () => {
   const { authUser, isLoading, error: authError } = useAuthUser();
   const queryClient = useQueryClient();
+  const { theme } = useThemeSelector();
 
   const [formState, setFormState] = useState({
     fullName: authUser?.fullName || "",
@@ -51,166 +58,204 @@ const OnboardingPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <LoaderIcon className="animate-spin text-blue-500 size-8" />
+      <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin mx-auto"></div>
+          <p className="text-[var(--text)]/70">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
   if (authError) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-700">
-        Error: {authError.message || "Failed to load user data"}
+      <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
+          <p className="text-red-500">Error: {authError.message || "Failed to load user data"}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white text-gray-800 transition-all duration-300">
-      <div className="w-full max-w-3xl border border-blue-200 bg-white rounded-xl shadow-lg p-6">
-        <div className="mb-6 flex items-center gap-2 justify-center">
-          <Dessert className="text-blue-500 size-8 animate-spin-slow" />
-          <h1 className="text-2xl font-bold text-blue-600">Complete Your Profile</h1>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-800 border border-red-300 rounded">
-            <span>{error.response?.data?.message || "Error completing onboarding"}</span>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        <div className="bg-[var(--background)] border border-[var(--primary)]/20 rounded-2xl p-8 shadow-xl backdrop-blur-sm">
+          
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="relative">
+                <Languages className="size-8 text-[var(--primary)]" />
+                <Sparkles className="size-4 text-[var(--primary)] absolute -top-1 -right-1" />
+              </div>
+              <h1 className="text-3xl font-bold text-[var(--text)]">LingoBuddy</h1>
+            </div>
+            <h2 className="text-2xl font-semibold text-[var(--text)] mb-2">Complete Your Profile</h2>
+            <p className="text-sm opacity-70">Tell us about yourself to find the perfect language partners</p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Profile Picture */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className="size-32 rounded-full border border-blue-200 overflow-hidden bg-gray-100">
-              {formState.profilePicture ? (
-                <img
-                  src={formState.profilePicture}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                  onError={() => {
-                    toast.error("Failed to load avatar");
-                    setFormState({ ...formState, profilePicture: "" });
-                  }}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <CameraIcon className="size-10 text-gray-400" />
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm">
+              {error.response?.data?.message || "Error completing onboarding"}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center space-y-6">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full border-4 border-[var(--primary)]/20 overflow-hidden bg-[var(--background)] shadow-lg">
+                  {formState.profilePicture ? (
+                    <img
+                      src={formState.profilePicture}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      onError={() => {
+                        toast.error("Failed to load avatar");
+                        setFormState({ ...formState, profilePicture: "" });
+                      }}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <CameraIcon className="size-12 text-[var(--text)]/30" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleRandomAvatar}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-            >
-              <ShuffleIcon className="inline size-4 mr-1" />
-              Generate Random Avatar
-            </button>
-          </div>
-
-          {/* Full Name */}
-          <div>
-            <label className="block text-sm font-medium">Full Name</label>
-            <input
-              type="text"
-              value={formState.fullName}
-              onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
-              className="w-full border border-gray-300 bg-blue-100 p-2 rounded focus:ring-2 focus:ring-blue-400"
-              placeholder="Your full name"
-              required
-            />
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label className="block text-sm font-medium">Bio</label>
-            <textarea
-              value={formState.bio}
-              onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
-              className="w-full border border-gray-300 bg-blue-100 p-2 rounded focus:ring-2 focus:ring-blue-400"
-              placeholder="Tell us about yourself"
-            />
-          </div>
-
-          {/* Languages */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Native Language</label>
-              <select
-                value={formState.nativeLanguage}
-                onChange={(e) => setFormState({ ...formState, nativeLanguage: e.target.value })}
-                className="w-full border border-gray-300 p-2 bg-blue-100 rounded focus:ring-2 focus:ring-blue-400"
-                required
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--primary)] rounded-full flex items-center justify-center">
+                  <User className="size-4 text-white" />
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleRandomAvatar}
+                className="bg-[var(--primary)]/10 text-[var(--primary)] px-6 py-3 rounded-xl hover:bg-[var(--primary)]/20 transition-all duration-200 flex items-center gap-2 font-medium"
               >
-                <option value="">Select</option>
-                {LANGUAGES.map((lang) => (
-                  <option key={lang} value={lang.toLowerCase()}>{lang}</option>
-                ))}
-              </select>
+                <ShuffleIcon className="size-4" />
+                Generate Random Avatar
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium">Learning Language</label>
-              <select
-                value={formState.learningLanguage}
-                onChange={(e) => setFormState({ ...formState, learningLanguage: e.target.value })}
-                className="w-full border border-gray-300 p-2 bg-blue-100 rounded focus:ring-2 focus:ring-blue-400"
-                required
-              >
-                <option value="">Select</option>
-                {LANGUAGES.map((lang) => (
-                  <option key={lang} value={lang.toLowerCase()}>{lang}</option>
-                ))}
-              </select>
-            </div>
-          </div>
 
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium">Location</label>
-            <div className="relative">
-              <MapPinIcon className="absolute top-1/2 -translate-y-1/2 left-3 size-5 text-gray-400" />
-              <input
-                type="text"
-                value={formState.location}
-                onChange={(e) => setFormState({ ...formState, location: e.target.value })}
-                className="w-full pl-10 border border-gray-300 p-2 rounded bg-blue-100 focus:ring-2 focus:ring-blue-400"
-                placeholder="City, Country"
+            {/* Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Full Name */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text)] flex items-center gap-2">
+                  <User className="size-4" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={formState.fullName}
+                  onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
+                  className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
+                  placeholder="Your full name"
+                  required
+                />
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text)] flex items-center gap-2">
+                  <MapPinIcon className="size-4" />
+                  Location
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formState.location}
+                    onChange={(e) => setFormState({ ...formState, location: e.target.value })}
+                    className="w-full pl-12 pr-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
+                    placeholder="City, Country"
+                  />
+                  <MapPinIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[var(--text)]/50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[var(--text)] flex items-center gap-2">
+                <MessageSquare className="size-4" />
+                Bio
+              </label>
+              <textarea
+                value={formState.bio}
+                onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
+                className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200 resize-none"
+                placeholder="Tell us about yourself and your language learning goals..."
+                rows={3}
               />
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <LoaderIcon className="inline size-5 mr-2 animate-spin" />
-                Onboarding...
-              </>
-            ) : (
-              <>
-                <ShipWheelIcon className="inline size-5 mr-2" />
-                Complete Onboarding
-              </>
-            )}
-          </button>
-        </form>
+            {/* Languages */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text)] flex items-center gap-2">
+                  <Globe className="size-4" />
+                  Native Language
+                </label>
+                <select
+                  value={formState.nativeLanguage}
+                  onChange={(e) => setFormState({ ...formState, nativeLanguage: e.target.value })}
+                  className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
+                  required
+                >
+                  <option value="">Select your native language</option>
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang} value={lang.toLowerCase()}>{lang}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text)] flex items-center gap-2">
+                  <Languages className="size-4" />
+                  Learning Language
+                </label>
+                <select
+                  value={formState.learningLanguage}
+                  onChange={(e) => setFormState({ ...formState, learningLanguage: e.target.value })}
+                  className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
+                  required
+                >
+                  <option value="">Select language you're learning</option>
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang} value={lang.toLowerCase()}>{lang}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full bg-[var(--primary)] text-white py-4 px-6 rounded-xl font-medium hover:bg-[var(--primary)]/90 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Completing Profile...
+                </>
+              ) : (
+                <>
+                  <ShipWheelIcon className="size-5" />
+                  Complete Profile
+                  <ArrowRight className="size-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
-
-      {/* Add animation CSS */}
-      <style jsx="true">{`
-        @keyframes spin-slow {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 5s linear infinite;
-        }
-      `}</style>
     </div>
   );
 };
