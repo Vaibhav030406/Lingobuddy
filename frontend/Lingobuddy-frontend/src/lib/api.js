@@ -58,3 +58,8 @@ export async function acceptFriendRequest(requestId) {
   const response = await instance.put(`/user/friend-request/${requestId}/accept`);
   return response.data;
 }
+
+export async function getStreamToken() {
+  const response = await instance.get("/chat/token");
+  return response.data;
+}

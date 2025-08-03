@@ -49,6 +49,8 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    resetOtp: String,
+    resetOtpExpiry: Date,
   },
   { timestamps: true }
 );

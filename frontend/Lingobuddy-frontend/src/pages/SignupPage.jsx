@@ -1,10 +1,19 @@
 import { useState } from "react";
-import { Languages, Sparkles, Eye, EyeOff, ArrowRight, Users, Globe } from "lucide-react";
+import {
+  Languages,
+  Sparkles,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Users,
+  Globe,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { signup } from '../lib/api';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { signup } from "../lib/api";
 import toast from "react-hot-toast";
 import { useThemeSelector } from "../hooks/useThemeSelector";
+import { FaGoogle } from "react-icons/fa";
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -16,14 +25,20 @@ const SignUpPage = () => {
   const { theme } = useThemeSelector();
 
   const queryClient = useQueryClient();
-  const { mutate: signupMutation, isPending, error } = useMutation({
+  const {
+    mutate: signupMutation,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: signup,
     onSuccess: () => {
       toast.success("Signup successful!");
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to signup. Please try again.");
+      toast.error(
+        err.response?.data?.message || "Failed to signup. Please try again."
+      );
     },
   });
 
@@ -35,7 +50,6 @@ const SignUpPage = () => {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        
         {/* Left Side - Hero Section */}
         <div className="hidden lg:flex flex-col items-center justify-center text-center space-y-8 p-8">
           <div className="relative">
@@ -49,11 +63,12 @@ const SignUpPage = () => {
                 Join <span className="text-[var(--primary)]">LingoBuddy</span>
               </h1>
               <p className="text-lg opacity-80 max-w-md">
-                Start your language learning journey with millions of learners worldwide
+                Start your language learning journey with millions of learners
+                worldwide
               </p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4 text-sm opacity-70">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-[var(--primary)] rounded-full"></div>
@@ -73,7 +88,6 @@ const SignUpPage = () => {
         {/* Right Side - Signup Form */}
         <div className="w-full max-w-md mx-auto">
           <div className="bg-[var(--background)] border border-[var(--primary)]/20 rounded-2xl p-8 shadow-xl backdrop-blur-sm">
-            
             {/* Header */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-4">
@@ -81,16 +95,23 @@ const SignUpPage = () => {
                   <Languages className="size-8 text-[var(--primary)]" />
                   <Sparkles className="size-4 text-[var(--primary)] absolute -top-1 -right-1" />
                 </div>
-                <h2 className="text-2xl font-bold text-[var(--text)]">LingoBuddy</h2>
+                <h2 className="text-2xl font-bold text-[var(--text)]">
+                  LingoBuddy
+                </h2>
               </div>
-              <h3 className="text-xl font-semibold text-[var(--text)] mb-2">Create your account</h3>
-              <p className="text-sm opacity-70">Join our global community of language learners</p>
+              <h3 className="text-xl font-semibold text-[var(--text)] mb-2">
+                Create your account
+              </h3>
+              <p className="text-sm opacity-70">
+                Join our global community of language learners
+              </p>
             </div>
 
             {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm">
-                {error.response?.data?.message || "An error occurred during signup"}
+                {error.response?.data?.message ||
+                  "An error occurred during signup"}
               </div>
             )}
 
@@ -105,7 +126,9 @@ const SignUpPage = () => {
                   className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
                   placeholder="Enter your full name"
                   value={signupData.fullName}
-                  onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setSignupData({ ...signupData, fullName: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -119,7 +142,9 @@ const SignUpPage = () => {
                   className="w-full px-4 py-3 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
                   placeholder="Enter your email"
                   value={signupData.email}
-                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                  onChange={(e) =>
+                    setSignupData({ ...signupData, email: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -134,7 +159,9 @@ const SignUpPage = () => {
                     className="w-full px-4 py-3 pr-12 border border-[var(--primary)]/20 rounded-xl bg-[var(--background)] text-[var(--text)] placeholder-[var(--text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] transition-all duration-200"
                     placeholder="Create a strong password"
                     value={signupData.password}
-                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, password: e.target.value })
+                    }
                     required
                   />
                   <button
@@ -142,10 +169,33 @@ const SignUpPage = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text)]/50 hover:text-[var(--text)] transition-colors"
                   >
-                    {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                    {showPassword ? (
+                      <EyeOff className="size-5" />
+                    ) : (
+                      <Eye className="size-5" />
+                    )}
                   </button>
                 </div>
               </div>
+              {/* Or Divider */}
+              <div className="my-6 flex items-center justify-center gap-2 text-sm text-[var(--text)]/60">
+                <div className="h-px flex-1 bg-[var(--text)]/20"></div>
+                <span>OR</span>
+                <div className="h-px flex-1 bg-[var(--text)]/20"></div>
+              </div>
+
+              {/* Google OAuth Button */}
+              <button
+                onClick={() =>
+                  (window.location.href =
+                    "http://localhost:5001/api/auth/google")
+                } // update to match your backend
+                type="button"
+                className="w-full bg-white text-black border border-[var(--primary)]/20 py-3 px-6 rounded-xl font-medium hover:bg-gray-100 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-3"
+              >
+                <FaGoogle/>
+                Continue with Google
+              </button>
 
               <button
                 type="submit"
@@ -170,8 +220,8 @@ const SignUpPage = () => {
             <div className="mt-8 text-center">
               <p className="text-sm text-[var(--text)]/70">
                 Already have an account?{" "}
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="text-[var(--primary)] hover:text-[var(--primary)]/80 font-medium transition-colors"
                 >
                   Sign in here

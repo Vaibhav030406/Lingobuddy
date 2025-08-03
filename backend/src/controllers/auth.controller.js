@@ -89,6 +89,106 @@ export const login = async (req, res) => {
       return res.status(500).json({ message: "Internal server error" });
    }
 };
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = Date.now() + 1000 * 60 * 10; // 10 mins from now
+
+    user.resetOtp = otp;
+    user.resetOtpExpiry = new Date(expiry);
+    await user.save();
+
+    // Simulate email sending
+    console.log(`🔐 OTP for ${email}: ${otp}`);
+
+    res.status(200).json({ success: true, message: "OTP sent to your email" });
+
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user || !user.resetOtp || !user.resetOtpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ message: "Incorrect OTP" });
+    }
+
+    if (user.resetOtpExpiry < Date.now()) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    // Optional: Clear OTP after success (to prevent reuse)
+    user.resetOtp = null;
+    user.resetOtpExpiry = null;
+    await user.save();
+
+    res.status(200).json({ success: true, message: "OTP verified successfully" });
+
+  } catch (err) {
+    console.error("OTP Verification Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+export const resetPassword = async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+
+  if (!email || !password || !confirmPassword) {
+    return res.status(400).json({ message: "Email, password and confirm password are required" });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.password = password; // Will be hashed if you use a pre-save hook
+    user.resetOtp = null;
+    user.resetOtpExpiry = null;
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Reset Password Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 export const logout = async (req, res) => {
    res.clearCookie("jwt");

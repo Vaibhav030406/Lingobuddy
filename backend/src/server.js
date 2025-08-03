@@ -3,6 +3,10 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './lib/db.js';
+import session from "express-session";
+import passport from "passport";
+import "./config/passport.js"; // import your strategy
+
 
 dotenv.config();
 
@@ -17,6 +21,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+
+// ✅ Add these
+app.use(
+  session({
+    secret: process.env.JWT_SECRET_KEY,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 // ✅ Routes come after middleware
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';

@@ -1,15 +1,18 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import OnboardingPage from './pages/OnboardingPage';
-import NotificationsPage from './pages/NotificationsPage';
-import CallPage from './pages/CallPage';
-import ChatPage from './pages/ChatPage';
-import { Toaster } from 'react-hot-toast';
-import useAuthUser from './hooks/useAuthUser';
-import PageLoader from './components/PageLoader';
-import Layout from './components/Layout';
+import { Routes, Route, Navigate } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import CallPage from "./pages/CallPage";
+import ChatPage from "./pages/ChatPage";
+import { Toaster } from "react-hot-toast";
+import useAuthUser from "./hooks/useAuthUser";
+import PageLoader from "./components/PageLoader";
+import Layout from "./components/Layout";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import VerifyOtpPage from "./pages/VerifyOtpPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // ✅ No need to use `theme` here anymore
 export default function App() {
@@ -69,12 +72,26 @@ export default function App() {
             }
           />
           <Route
-            path="/call"
-            element={isAuthenticated ? <CallPage /> : <Navigate to="/login" />}
+            path="/call/:id"
+            element={
+              isAuthenticated && isOnboarded ? (
+                <CallPage />
+              ) : (
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+              )
+            }
           />
           <Route
-            path="/chat"
-            element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />}
+            path="/chat/:id"
+            element={
+              isAuthenticated && isOnboarded ? (
+                <Layout showSidebar={false}>
+                  <ChatPage />
+                </Layout>
+              ) : (
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+              )
+            }
           />
           <Route
             path="/onboarding"
@@ -90,7 +107,11 @@ export default function App() {
               )
             }
           />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-otp" element={<VerifyOtpPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
+        
       </div>
       <Toaster />
     </div>
