@@ -1,6 +1,7 @@
 import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "../utils/sendEmail.js"
 
 export const signup = async (req, res) => {
    const { fullName, email, password } = req.body; // Changed 'username' to 'fullName'
@@ -92,32 +93,26 @@ export const login = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
-  }
+  if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
     const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user)
+      return res.status(404).json({ message: "No user found with this email" });
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = Date.now() + 1000 * 60 * 10; // 10 mins from now
 
     user.resetOtp = otp;
-    user.resetOtpExpiry = new Date(expiry);
+    user.resetOtpExpiry = Date.now() + 10 * 60 * 1000; // 10 min
     await user.save();
 
-    // Simulate email sending
-    console.log(`🔐 OTP for ${email}: ${otp}`);
+    // 🔥 Send the OTP via email
+    await sendEmail(email, "LingoBuddy OTP", `Your OTP is: ${otp}`);
 
     res.status(200).json({ success: true, message: "OTP sent to your email" });
-
   } catch (err) {
-    console.error("Forgot Password Error:", err);
+    console.error("Forgot password error:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
