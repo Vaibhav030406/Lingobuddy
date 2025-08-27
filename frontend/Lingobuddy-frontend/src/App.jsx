@@ -27,6 +27,7 @@ export default function App() {
     <div className="flex flex-col min-h-screen bg-[var(--background)] text-[var(--text)]">
       <div className="flex-grow">
         <Routes>
+          
           <Route
             path="/"
             element={
