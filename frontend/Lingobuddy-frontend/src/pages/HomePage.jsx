@@ -14,75 +14,11 @@ import { capitalize } from "../lib/utils"
 import { useThemeSelector } from "../hooks/useThemeSelector"
 import { getLanguageFlag } from "../components/FriendCard"
 
-
-const normalizeLang = (value) => {
-  if (!value) return null
-  // string it, lowercase, trim
-  let v = String(value).toLowerCase().trim()
-
-  // drop anything in parentheses: "english (us)" -> "english"
-  v = v.replace(/\s*\(.*?\)\s*/g, "")
-
-  // normalize common punctuation/diacritics-ish quick wins
-  const map = {
-    // English
-    en: "english", eng: "english", english: "english", "english us": "english", "english uk": "english",
-    // Spanish
-    es: "spanish", spa: "spanish", español: "spanish", espanol: "spanish", spanish: "spanish",
-    // French
-    fr: "french", fra: "french", français: "french", francais: "french", french: "french",
-    // German
-    de: "german", deu: "german", deutsch: "german", german: "german",
-    // Hindi
-    hi: "hindi", "हिंदी": "hindi", hindi: "hindi",
-    // Chinese
-    zh: "chinese", "zh-cn": "chinese", "zh-tw": "chinese", "中文": "chinese", "chinese simplified": "chinese", "chinese traditional": "chinese", chinese: "chinese",
-    // Portuguese
-    pt: "portuguese", por: "portuguese", português: "portuguese", portugues: "portuguese", portuguese: "portuguese",
-    // Japanese
-    ja: "japanese", jpn: "japanese", 日本語: "japanese", japanese: "japanese",
-    // Korean
-    ko: "korean", kor: "korean", 한국어: "korean", korean: "korean",
-    // Italian
-    it: "italian", ita: "italian", italiano: "italian", italian: "italian",
-    // Russian
-    ru: "russian", rus: "russian", русский: "russian", russian: "russian",
-  }
-
-  return map[v] || v
-}
-
-const getUserLangs = (user) => {
-  // read with fallbacks to survive API naming differences
-  const native =
-    user?.nativeLanguage ??
-    user?.nativeLang ??
-    user?.languageNative ??
-    user?.native ??
-    null
-
-  const learning =
-    user?.learningLanguage ??
-    user?.targetLanguage ??
-    user?.languageLearning ??
-    user?.learning ??
-    null
-
-  return {
-    native: normalizeLang(native),
-    learning: normalizeLang(learning),
-  }
-}
-
 const HomePage = () => {
   const queryClient = useQueryClient()
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set())
   const [pendingRequests, setPendingRequests] = useState(new Set())
   const { theme } = useThemeSelector()
-
-  // ✅ two independent filters
-  const [filterNativeToLearning, setFilterNativeToLearning] = useState(true) // Their native == My learning
-  const [filterLearningToNative, setFilterLearningToNative] = useState(true) // Their learning == My native
 
   const { data: authUser, isLoading: loadingUser } = useQuery({
     queryKey: ["authUser"],
@@ -146,21 +82,8 @@ const HomePage = () => {
     }
   }, [outgoingFriendReqs, loadingOutgoingReqs])
 
-  // ✅ Robust filtering
-  const filteredUsers = recommendedUsers.filter((user) => {
-    if (!authUser) return true
-
-    const { native: myNative, learning: myLearning } = getUserLangs(authUser)
-    const { native: userNative, learning: userLearning } = getUserLangs(user)
-
-    // If both filters off → no filtering
-    if (!filterNativeToLearning && !filterLearningToNative) return true
-
-    const cond1 = filterNativeToLearning && !!userNative && !!myLearning && userNative === myLearning
-    const cond2 = filterLearningToNative && !!userLearning && !!myNative && userLearning === myNative
-
-    return cond1 || cond2
-  })
+  // ✅ Show all users directly
+  const filteredUsers = recommendedUsers
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] transition-all duration-500">
@@ -204,33 +127,6 @@ const HomePage = () => {
                 </p>
               </div>
             </div>
-
-            {/* ✅ Two filter checkboxes */}
-            <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-primary transition-all duration-300 hover:scale-110"
-                  checked={filterNativeToLearning}
-                  onChange={() => setFilterNativeToLearning((prev) => !prev)}
-                />
-                <span className="text-sm text-[var(--text)] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                  Their native = My learning
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-primary transition-all duration-300 hover:scale-110"
-                  checked={filterLearningToNative}
-                  onChange={() => setFilterLearningToNative((prev) => !prev)}
-                />
-                <span className="text-sm text-[var(--text)] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                  Their learning = My native
-                </span>
-              </label>
-            </div>
           </div>
 
           {(loadingUsers || loadingOutgoingReqs || loadingUser) ? (
@@ -246,8 +142,8 @@ const HomePage = () => {
                 <div className="mx-auto mb-4">
                   <SparklesIcon className="size-12 text-[var(--primary)]/50 animate-pulse" />
                 </div>
-                <h3 className="font-semibold text-xl mb-2 text-[var(--text)]">No matching learners</h3>
-                <p className="text-[var(--text)]/70">Try adjusting filters or updating your profile languages.</p>
+                <h3 className="font-semibold text-xl mb-2 text-[var(--text)]">No learners found</h3>
+                <p className="text-[var(--text)]/70">Check back later for more recommendations.</p>
               </div>
             </div>
           ) : (
@@ -294,27 +190,31 @@ const HomePage = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <div
-                          className="badge badge-outline transition-all duration-300 hover:scale-105"
-                          style={{
-                            borderColor: `var(--primary)`,
-                            backgroundColor: `var(--primary)`,
-                            color: "white",
-                          }}
-                        >
-                          {getLanguageFlag(user.nativeLanguage || user.nativeLang)}
-                          Native: {capitalize(user.nativeLanguage || user.nativeLang)}
-                        </div>
-                        <div
-                          className="badge badge-outline transition-all duration-300 hover:scale-105"
-                          style={{
-                            borderColor: `var(--primary)`,
-                            color: `var(--primary)`,
-                          }}
-                        >
-                          {getLanguageFlag(user.learningLanguage || user.targetLanguage)}
-                          Learning: {capitalize(user.learningLanguage || user.targetLanguage)}
-                        </div>
+                        {user.nativeLanguage && (
+                          <div
+                            className="badge badge-outline transition-all duration-300 hover:scale-105"
+                            style={{
+                              borderColor: `var(--primary)`,
+                              backgroundColor: `var(--primary)`,
+                              color: "white",
+                            }}
+                          >
+                            {getLanguageFlag(user.nativeLanguage)}
+                            Native: {capitalize(user.nativeLanguage)}
+                          </div>
+                        )}
+                        {user.learningLanguage && (
+                          <div
+                            className="badge badge-outline transition-all duration-300 hover:scale-105"
+                            style={{
+                              borderColor: `var(--primary)`,
+                              color: `var(--primary)`,
+                            }}
+                          >
+                            {getLanguageFlag(user.learningLanguage)}
+                            Learning: {capitalize(user.learningLanguage)}
+                          </div>
+                        )}
                       </div>
 
                       <button
