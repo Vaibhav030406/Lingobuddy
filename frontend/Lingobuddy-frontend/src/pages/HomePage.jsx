@@ -1,40 +1,92 @@
-"use client"
-
-// HomePage.jsx
+// frontend/Lingobuddy-frontend/src/pages/HomePage.jsx
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import {
   getOutgoingFriendReqs,
   getRecommendedUsers,
-  getUserFriends,
+  getAuthUser,
   sendFriendRequest,
-  getAuthUser, // ✅ fetch logged-in user profile
 } from "../lib/api"
 import { Link } from "react-router-dom"
-import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon, HeartIcon, SparklesIcon } from "lucide-react"
+import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon, SparklesIcon } from "lucide-react"
 
-import { capitialize } from "../lib/utils"
+import { capitalize } from "../lib/utils"
 import { useThemeSelector } from "../hooks/useThemeSelector"
+import { getLanguageFlag } from "../components/FriendCard"
 
-import FriendCard, { getLanguageFlag } from "../components/FriendCard"
-import NoFriendsFound from "../components/NoFriendsFound"
+
+const normalizeLang = (value) => {
+  if (!value) return null
+  // string it, lowercase, trim
+  let v = String(value).toLowerCase().trim()
+
+  // drop anything in parentheses: "english (us)" -> "english"
+  v = v.replace(/\s*\(.*?\)\s*/g, "")
+
+  // normalize common punctuation/diacritics-ish quick wins
+  const map = {
+    // English
+    en: "english", eng: "english", english: "english", "english us": "english", "english uk": "english",
+    // Spanish
+    es: "spanish", spa: "spanish", español: "spanish", espanol: "spanish", spanish: "spanish",
+    // French
+    fr: "french", fra: "french", français: "french", francais: "french", french: "french",
+    // German
+    de: "german", deu: "german", deutsch: "german", german: "german",
+    // Hindi
+    hi: "hindi", "हिंदी": "hindi", hindi: "hindi",
+    // Chinese
+    zh: "chinese", "zh-cn": "chinese", "zh-tw": "chinese", "中文": "chinese", "chinese simplified": "chinese", "chinese traditional": "chinese", chinese: "chinese",
+    // Portuguese
+    pt: "portuguese", por: "portuguese", português: "portuguese", portugues: "portuguese", portuguese: "portuguese",
+    // Japanese
+    ja: "japanese", jpn: "japanese", 日本語: "japanese", japanese: "japanese",
+    // Korean
+    ko: "korean", kor: "korean", 한국어: "korean", korean: "korean",
+    // Italian
+    it: "italian", ita: "italian", italiano: "italian", italian: "italian",
+    // Russian
+    ru: "russian", rus: "russian", русский: "russian", russian: "russian",
+  }
+
+  return map[v] || v
+}
+
+const getUserLangs = (user) => {
+  // read with fallbacks to survive API naming differences
+  const native =
+    user?.nativeLanguage ??
+    user?.nativeLang ??
+    user?.languageNative ??
+    user?.native ??
+    null
+
+  const learning =
+    user?.learningLanguage ??
+    user?.targetLanguage ??
+    user?.languageLearning ??
+    user?.learning ??
+    null
+
+  return {
+    native: normalizeLang(native),
+    learning: normalizeLang(learning),
+  }
+}
 
 const HomePage = () => {
   const queryClient = useQueryClient()
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set())
   const [pendingRequests, setPendingRequests] = useState(new Set())
-  const [applyFilter, setApplyFilter] = useState(true) // ✅ toggle filter state
   const { theme } = useThemeSelector()
 
-  // Logged-in user profile
+  // ✅ two independent filters
+  const [filterNativeToLearning, setFilterNativeToLearning] = useState(true) // Their native == My learning
+  const [filterLearningToNative, setFilterLearningToNative] = useState(true) // Their learning == My native
+
   const { data: authUser, isLoading: loadingUser } = useQuery({
     queryKey: ["authUser"],
     queryFn: getAuthUser,
-  })
-
-  const { data: friends = [], isLoading: loadingFriends } = useQuery({
-    queryKey: ["friends"],
-    queryFn: getUserFriends,
   })
 
   const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
@@ -94,10 +146,20 @@ const HomePage = () => {
     }
   }, [outgoingFriendReqs, loadingOutgoingReqs])
 
-  // ✅ Apply filter: only show users whose native language = my learning language
+  // ✅ Robust filtering
   const filteredUsers = recommendedUsers.filter((user) => {
-    if (!applyFilter || !authUser) return true
-    return user.nativeLanguage?.toLowerCase() === authUser.learningLanguage?.toLowerCase()
+    if (!authUser) return true
+
+    const { native: myNative, learning: myLearning } = getUserLangs(authUser)
+    const { native: userNative, learning: userLearning } = getUserLangs(user)
+
+    // If both filters off → no filtering
+    if (!filterNativeToLearning && !filterLearningToNative) return true
+
+    const cond1 = filterNativeToLearning && !!userNative && !!myLearning && userNative === myLearning
+    const cond2 = filterLearningToNative && !!userLearning && !!myNative && userLearning === myNative
+
+    return cond1 || cond2
   })
 
   return (
@@ -128,46 +190,6 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Friends Section */}
-        <section className="space-y-6 animate-slide-up-delay-2">
-          <div className="flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-              <HeartIcon className="size-6 text-[var(--primary)] group-hover:scale-125 transition-transform duration-300" />
-              <h2 className="text-3xl font-bold text-[var(--text)] group-hover:text-[var(--primary)] transition-colors duration-300">
-                Your Friends
-              </h2>
-            </div>
-            <div className="badge badge-primary badge-lg hover:scale-110 transition-transform duration-300 shadow-lg">
-              {friends.length} {friends.length === 1 ? "Friend" : "Friends"}
-            </div>
-          </div>
-
-          {loadingFriends ? (
-            <div className="flex justify-center py-12">
-              <div className="relative">
-                <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
-                <div className="absolute inset-0 loading loading-spinner loading-lg text-[var(--primary)]/30 animate-ping"></div>
-              </div>
-            </div>
-          ) : friends.length === 0 ? (
-            <div className="animate-fade-in">
-              <NoFriendsFound />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {friends.map((friend, index) => (
-                <div
-                  key={friend._id}
-                  className="animate-slide-up-stagger"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <FriendCard friend={friend} />
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
         {/* Recommended Users Section */}
         <section className="space-y-6 animate-slide-up-delay-3">
           <div className="flex items-center justify-between group">
@@ -183,20 +205,35 @@ const HomePage = () => {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-primary transition-all duration-300 hover:scale-110"
-                checked={applyFilter}
-                onChange={() => setApplyFilter((prev) => !prev)}
-              />
-              <span className="text-sm text-[var(--text)] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-                Match my target language
-              </span>
-            </label>
+            {/* ✅ Two filter checkboxes */}
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-primary transition-all duration-300 hover:scale-110"
+                  checked={filterNativeToLearning}
+                  onChange={() => setFilterNativeToLearning((prev) => !prev)}
+                />
+                <span className="text-sm text-[var(--text)] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                  Their native = My learning
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-primary transition-all duration-300 hover:scale-110"
+                  checked={filterLearningToNative}
+                  onChange={() => setFilterLearningToNative((prev) => !prev)}
+                />
+                <span className="text-sm text-[var(--text)] opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                  Their learning = My native
+                </span>
+              </label>
+            </div>
           </div>
 
-          {loadingUsers || loadingOutgoingReqs || loadingUser ? (
+          {(loadingUsers || loadingOutgoingReqs || loadingUser) ? (
             <div className="flex justify-center py-12">
               <div className="relative">
                 <span className="loading loading-spinner loading-lg text-[var(--primary)]" />
@@ -210,7 +247,7 @@ const HomePage = () => {
                   <SparklesIcon className="size-12 text-[var(--primary)]/50 animate-pulse" />
                 </div>
                 <h3 className="font-semibold text-xl mb-2 text-[var(--text)]">No matching learners</h3>
-                <p className="text-[var(--text)]/70">Try turning off the filter to see more learners.</p>
+                <p className="text-[var(--text)]/70">Try adjusting filters or updating your profile languages.</p>
               </div>
             </div>
           ) : (
@@ -265,8 +302,8 @@ const HomePage = () => {
                             color: "white",
                           }}
                         >
-                          {getLanguageFlag(user.nativeLanguage)}
-                          Native: {capitialize(user.nativeLanguage)}
+                          {getLanguageFlag(user.nativeLanguage || user.nativeLang)}
+                          Native: {capitalize(user.nativeLanguage || user.nativeLang)}
                         </div>
                         <div
                           className="badge badge-outline transition-all duration-300 hover:scale-105"
@@ -275,16 +312,10 @@ const HomePage = () => {
                             color: `var(--primary)`,
                           }}
                         >
-                          {getLanguageFlag(user.learningLanguage)}
-                          Learning: {capitialize(user.learningLanguage)}
+                          {getLanguageFlag(user.learningLanguage || user.targetLanguage)}
+                          Learning: {capitalize(user.learningLanguage || user.targetLanguage)}
                         </div>
                       </div>
-
-                      {user.bio && (
-                        <p className="text-sm opacity-80 leading-relaxed text-[var(--text)] group-hover:opacity-100 transition-opacity duration-300">
-                          {user.bio}
-                        </p>
-                      )}
 
                       <button
                         className={`btn w-full transition-all duration-300 relative overflow-hidden group/btn ${

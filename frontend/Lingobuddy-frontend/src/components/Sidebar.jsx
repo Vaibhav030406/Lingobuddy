@@ -3,12 +3,23 @@ import { useLocation, Link } from "react-router-dom";
 import { Languages, HomeIcon, BellIcon, UsersIcon } from "lucide-react";
 import { useThemeSelector } from "../hooks/useThemeSelector";
 import ThemeSelector from "./ThemeSelector";
+import { useQuery } from "@tanstack/react-query";
+import { getFriendRequests } from "../lib/api";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const currentPath = location.pathname;
   const { theme } = useThemeSelector();
+
+  const { data: friendRequests } = useQuery({
+    queryKey: ["friendRequests"],
+    queryFn: getFriendRequests,
+    enabled: !!authUser,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  const incomingRequestsCount = friendRequests?.incomingRequests?.length || 0;
 
   return (
     <aside className="w-64 bg-[var(--background)] border-r border-[var(--primary)] hidden lg:flex flex-col h-screen sticky top-0">
@@ -50,7 +61,7 @@ const Sidebar = () => {
 
         <Link
           to="/notifications"
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative ${
             currentPath === "/notifications" 
               ? "bg-[var(--primary)] text-white" 
               : "text-[var(--text)] hover:bg-[var(--primary)]/10"
@@ -58,6 +69,9 @@ const Sidebar = () => {
         >
           <BellIcon className="w-5 h-5" />
           <span>Notifications</span>
+          {incomingRequestsCount > 0 && (
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          )}
         </Link>
       </nav>
 

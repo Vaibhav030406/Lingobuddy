@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery } from "@tanstack/react-query";
 import { getStreamToken } from "../lib/api";
@@ -15,10 +15,11 @@ import {
 } from "stream-chat-react";
 import { StreamChat } from "stream-chat";
 import toast from "react-hot-toast";
+import { VideoIcon,Disc } from "lucide-react"; // Import VideoIcon
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
-// ✅ Inline loading component
+// Inline loading component
 const InlineChatLoader = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] gap-2 text-center">
@@ -47,10 +48,10 @@ const InlineChatLoader = () => {
   );
 };
 
-// ✅ Inline call button component
-const InlineCallButton = ({ handleVideoCall }) => {
+// Inline call and recordings buttons component
+const InlineActionButtons = ({ handleVideoCall, callId }) => {
   return (
-    <div className="absolute top-3 right-3 z-10">
+    <div className="absolute top-3 right-3 z-10 flex gap-2">
       <button
         onClick={handleVideoCall}
         className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md transition"
@@ -71,6 +72,17 @@ const InlineCallButton = ({ handleVideoCall }) => {
           />
         </svg>
       </button>
+
+      {/* View Recordings Button */}
+      {callId && (
+        <Link
+          to={`/recordings/${callId}`}
+          className="bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white p-2 rounded-full shadow-md transition"
+          title="View Recordings"
+        >
+          <Disc className="size-5" />
+        </Link>
+      )}
     </div>
   );
 };
@@ -90,6 +102,8 @@ const ChatPage = () => {
     queryFn: getStreamToken,
     enabled: !!authUser,
   });
+
+  const callId = authUser && targetUserId ? [authUser._id, targetUserId].sort().join("-") : null;
 
   useEffect(() => {
     const initChat = async () => {
@@ -113,8 +127,7 @@ const ChatPage = () => {
           tokenData.token
         );
 
-        const channelId = [authUser._id, targetUserId].sort().join("-");
-        const currChannel = client.channel("messaging", channelId, {
+        const currChannel = client.channel("messaging", callId, {
           members: [authUser._id, targetUserId],
         });
 
@@ -134,7 +147,7 @@ const ChatPage = () => {
     if (tokenData?.token && authUser && targetUserId) {
       initChat();
     }
-  }, [tokenData, authUser, targetUserId]);
+  }, [tokenData, authUser, targetUserId, callId]);
 
   const handleVideoCall = () => {
     if (channel) {
@@ -168,7 +181,7 @@ const ChatPage = () => {
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full relative">
-            <InlineCallButton handleVideoCall={handleVideoCall} />
+            <InlineActionButtons handleVideoCall={handleVideoCall} callId={callId} />
             <Window>
               <ChannelHeader />
               <MessageList />

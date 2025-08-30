@@ -148,7 +148,6 @@ const CallContent = () => {
       toast("Recording has been saved.", { icon: '💾' });
     };
 
-    // The event names may need to be confirmed with the latest Stream docs.
     call.on("call.recording_started", recordingStartedHandler);
     call.on("call.recording_stopped", recordingStoppedHandler);
 

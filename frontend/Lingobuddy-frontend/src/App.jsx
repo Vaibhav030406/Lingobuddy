@@ -1,3 +1,4 @@
+// frontend/Lingobuddy-frontend/src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -14,9 +15,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RecordingsPage from "./pages/RecordingsPage";
+import FriendsPage from "./pages/FriendsPage"; // ✅ Import FriendsPage
 
-
-// ✅ No need to use `theme` here anymore
 export default function App() {
   const { isLoading, authUser } = useAuthUser();
 
@@ -71,6 +71,18 @@ export default function App() {
                 </Layout>
               ) : (
                 <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/friends" // ✅ Add route for FriendsPage
+            element={
+              isAuthenticated && isOnboarded ? (
+                <Layout showSidebar>
+                  <FriendsPage />
+                </Layout>
+              ) : (
+                <Navigate to={isAuthenticated ? "/onboarding" : "/login"} />
               )
             }
           />

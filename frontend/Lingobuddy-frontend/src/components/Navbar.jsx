@@ -1,14 +1,25 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 import useAuthUser from "../hooks/useAuthUser";
 import { BellIcon, LogOutIcon, Languages } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
+import { useQuery } from "@tanstack/react-query";
+import { getFriendRequests } from "../lib/api";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const isChatPage = location.pathname?.startsWith("/chat");
   const { logoutMutation } = useLogout();
+
+  const { data: friendRequests } = useQuery({
+    queryKey: ["friendRequests"],
+    queryFn: getFriendRequests,
+    enabled: !!authUser,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  const incomingRequestsCount = friendRequests?.incomingRequests?.length || 0;
 
   return (
     <nav className="bg-[var(--background)] border-b border-[var(--primary)] sticky top-0 z-30 h-16">
@@ -28,10 +39,13 @@ const Navbar = () => {
 
           {/* Right side controls */}
           <div className="flex items-center gap-3 ml-auto">
-            <Link to="/notifications">
+            <Link to="/notifications" className="relative">
               <button className="p-2 rounded-full hover:bg-[var(--primary)]/10 transition-colors">
                 <BellIcon className="h-5 w-5 text-[var(--text)] opacity-70" />
               </button>
+              {incomingRequestsCount > 0 && (
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              )}
             </Link>
 
             <ThemeSelector />

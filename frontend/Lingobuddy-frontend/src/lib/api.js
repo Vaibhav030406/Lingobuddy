@@ -87,3 +87,11 @@ export const deleteCallRecording = async ({ callId, recordingId, session, filena
   });
   return response.data;
 };
+
+export const renameCallRecording = async ({ callId, recordingId, newName }) => {
+  const response = await instance.put(`/chat/call/${callId}/recordings/${recordingId}/rename`, {
+    newName
+  });
+  return response.data;
+};
+

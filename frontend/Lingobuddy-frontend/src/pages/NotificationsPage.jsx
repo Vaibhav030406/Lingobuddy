@@ -5,7 +5,7 @@ import { UserCheckIcon, BellIcon, CheckCircleIcon, SparklesIcon } from "lucide-r
 import { acceptFriendRequest, getFriendRequests } from "../lib/api"
 import NoNotificationsFound from "../components/NoNotificationsFound"
 import { useThemeSelector } from "../hooks/useThemeSelector"
-import { capitialize } from "../lib/utils"
+import { capitalize } from "../lib/utils"
 import { getLanguageFlag } from "../components/FriendCard"
 
 const NotificationsPage = () => {
@@ -116,11 +116,11 @@ const NotificationsPage = () => {
                               <div className="flex flex-wrap gap-2 mt-2">
                                 <div className="badge badge-primary badge-outline hover:scale-105 transition-transform duration-300">
                                   {getLanguageFlag(request.sender.nativeLanguage)}
-                                  Native: {capitialize(request.sender.nativeLanguage)}
+                                  Native: {capitalize(request.sender.nativeLanguage)}
                                 </div>
                                 <div className="badge badge-secondary badge-outline hover:scale-105 transition-transform duration-300">
                                   {getLanguageFlag(request.sender.learningLanguage)}
-                                  Learning: {capitialize(request.sender.learningLanguage)}
+                                  Learning: {capitalize(request.sender.learningLanguage)}
                                 </div>
                               </div>
                               {request.sender.location && (
