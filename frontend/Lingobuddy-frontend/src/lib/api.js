@@ -63,3 +63,27 @@ export async function getStreamToken() {
   const response = await instance.get("/chat/token");
   return response.data;
 }
+
+// API functions for call recording
+export const startCallRecording = async (callId) => {
+  const response = await instance.post(`/chat/call/${callId}/start-recording`);
+  return response.data;
+};
+
+export const stopCallRecording = async (callId) => {
+  const response = await instance.post(`/chat/call/${callId}/stop-recording`);
+  return response.data;
+};
+
+export const fetchCallRecordings = async (callId) => {
+  const response = await instance.get(`/chat/call/${callId}/recordings`);
+  return response.data;
+};
+
+// Updated to send session and filename in request body
+export const deleteCallRecording = async ({ callId, recordingId, session, filename }) => {
+  const response = await instance.delete(`/chat/call/${callId}/recordings/${recordingId}`, {
+    data: { session, filename }
+  });
+  return response.data;
+};

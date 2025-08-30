@@ -13,6 +13,8 @@ import Layout from "./components/Layout";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import RecordingsPage from "./pages/RecordingsPage";
+
 
 // ✅ No need to use `theme` here anymore
 export default function App() {
@@ -111,6 +113,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/recordings/:id" element={<Layout showSidebar={true}><RecordingsPage /></Layout>} />
         </Routes>
         
       </div>
