@@ -1,11 +1,7 @@
-"use client"
-
 import { useState } from "react"
 import { Languages, Sparkles, Eye, EyeOff, ArrowRight, Users, Globe } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { signup } from "../lib/api"
-import toast from "react-hot-toast"
+import useSignup from "../hooks/useSignup"
 import { useThemeSelector } from "../hooks/useThemeSelector"
 import { FaGoogle } from "react-icons/fa"
 
@@ -17,25 +13,17 @@ const SignUpPage = () => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const { theme } = useThemeSelector()
-
-  const queryClient = useQueryClient()
-  const {
-    mutate: signupMutation,
-    isPending,
-    error,
-  } = useMutation({
-    mutationFn: signup,
-    onSuccess: () => {
-      toast.success("Signup successful!")
-      queryClient.invalidateQueries({ queryKey: ["authUser"] })
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to signup. Please try again.")
-    },
-  })
+  const { signupMutation, isPending, error } = useSignup()
 
   const handleSignup = (e) => {
     e.preventDefault()
+    
+    // Basic validation is now handled in the useSignup hook
+    // but we can add client-side validation here too
+    if (!signupData.fullName?.trim() || !signupData.email?.trim() || !signupData.password) {
+      return // The hook will handle the error
+    }
+    
     signupMutation(signupData)
   }
 

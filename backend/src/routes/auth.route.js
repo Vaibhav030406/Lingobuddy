@@ -1,5 +1,5 @@
 import express from 'express';
-import { signup, login, logout,onboard } from '../controllers/auth.controller.js';
+import { signup, login, logout,onboard,updateProfile } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 import { forgotPassword } from '../controllers/auth.controller.js';
 import { verifyOtp } from '../controllers/auth.controller.js';
@@ -16,7 +16,7 @@ router.post('/verify-otp', verifyOtp);
 router.post('/resetPassword',resetPassword)
 
 router.post('/onboarding',protectRoute,onboard);
-
+router.put('/profile', protectRoute, updateProfile);
 //check if user is logged in or not
 router.get('/me',protectRoute,(req,res,next)=>{
     res.status(200).json(req.user) // Return user directly, not wrapped in success object

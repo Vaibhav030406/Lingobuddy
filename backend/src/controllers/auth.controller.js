@@ -59,6 +59,7 @@ export const signup = async (req, res) => {
    }
 };
 
+// In backend/src/controllers/auth.controller.js
 export const login = async (req, res) => {
    try {
       const { email, password } = req.body;
@@ -81,16 +82,21 @@ export const login = async (req, res) => {
       });
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-         httpOnly: true, // prevents client-side access
-         sameSite: "strict", // helps prevent CSRF attacks
-         secure: process.env.NODE_ENV === "production", // use secure cookies in production
+         httpOnly: true,
+         sameSite: "strict",
+         secure: process.env.NODE_ENV === "production",
       });
-      res.status(201).json({ success: true, message: "User logged in successfully", user }); // Changed message
+
+      // Remove password from response
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      
+      res.status(200).json({ success: true, message: "User logged in successfully", user: userResponse });
    } catch (error) {
+      console.error("Login error:", error);
       return res.status(500).json({ message: "Internal server error" });
    }
-};
-export const forgotPassword = async (req, res) => {
+};export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   if (!email) return res.status(400).json({ message: "Email is required" });
@@ -216,6 +222,34 @@ export const onboard = async (req, res) => {
         res.status(200).json({success: true, message: "User onboarded successfully", user: updatedUser});
     } catch (error) {
         console.error("Error during onboarding:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { fullName, bio, nativeLanguage, learningLanguage, location, profilePicture } = req.body;
+
+        const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true, runValidators: true }).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        try {
+            await upsertStreamUser({
+                id: updatedUser._id.toString(),
+                name: updatedUser.fullName,
+                image: updatedUser.profilePicture || "",
+            });
+            console.log(`Stream user upserted for ${updatedUser.fullName}`);
+        } catch (error) {
+            console.error("Error upserting Stream user:", error);
+        }
+
+        res.status(200).json({ success: true, message: "Profile updated successfully", user: updatedUser });
+    } catch (error) {
+        console.error("Error during profile update:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };

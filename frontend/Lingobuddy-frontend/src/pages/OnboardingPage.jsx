@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import useAuthUser from "../hooks/useAuthUser"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
@@ -15,37 +16,61 @@ import {
   MessageSquare,
   Globe,
   ArrowRight,
+  ArrowLeft,
+  Save,
 } from "lucide-react"
 import { LANGUAGES } from "../constants"
-import { completeOnboarding } from "../lib/api"
+import { completeOnboarding, updateProfile } from "../lib/api"
 import { useThemeSelector } from "../hooks/useThemeSelector"
 
 const OnboardingPage = () => {
   const { authUser, isLoading, error: authError } = useAuthUser()
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { theme } = useThemeSelector()
 
+  // Check if we're in edit mode
+  const isEditMode = location.pathname === "/edit-profile"
+
   const [formState, setFormState] = useState({
-    fullName: authUser?.fullName || "",
-    bio: authUser?.bio || "",
-    nativeLanguage: authUser?.nativeLanguage || "",
-    learningLanguage: authUser?.learningLanguage || "",
-    location: authUser?.location || "",
-    profilePicture: authUser?.profilePicture || "",
+    fullName: "",
+    bio: "",
+    nativeLanguage: "",
+    learningLanguage: "",
+    location: "",
+    profilePicture: "",
   })
+
+  // Update form state when authUser changes
+  useEffect(() => {
+    if (authUser) {
+      setFormState({
+        fullName: authUser.fullName || "",
+        bio: authUser.bio || "",
+        nativeLanguage: authUser.nativeLanguage || "",
+        learningLanguage: authUser.learningLanguage || "",
+        location: authUser.location || "",
+        profilePicture: authUser.profilePicture || "",
+      })
+    }
+  }, [authUser])
 
   const {
     mutate: onboardingMutation,
     isPending,
     error,
   } = useMutation({
-    mutationFn: completeOnboarding,
+    mutationFn: isEditMode ? updateProfile : completeOnboarding,
     onSuccess: () => {
-      toast.success("Profile onboarded successfully")
+      toast.success(isEditMode ? "Profile updated successfully!" : "Profile onboarded successfully")
       queryClient.invalidateQueries({ queryKey: ["authUser"] })
+      if (isEditMode) {
+        navigate("/") // Redirect to home after editing
+      }
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to complete onboarding.")
+      toast.error(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'complete'} profile.`)
     },
   })
 
@@ -59,6 +84,10 @@ const OnboardingPage = () => {
     const randomAvatar = `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}`
     setFormState({ ...formState, profilePicture: randomAvatar })
     toast.success("Random profile picture generated!")
+  }
+
+  const handleBack = () => {
+    navigate("/")
   }
 
   if (isLoading) {
@@ -89,6 +118,20 @@ const OnboardingPage = () => {
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex items-center justify-center p-4 transition-all duration-500">
       <div className="w-full max-w-4xl animate-fade-in">
         <div className="bg-[var(--background)] border border-[var(--primary)]/20 rounded-3xl p-8 shadow-2xl backdrop-blur-sm hover:shadow-3xl hover:border-[var(--primary)]/40 transition-all duration-700 hover:scale-[1.01]">
+          
+          {/* Back button for edit mode */}
+          {isEditMode && (
+            <div className="mb-6">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-2 text-[var(--text)]/70 hover:text-[var(--primary)] transition-colors duration-300 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform duration-300" />
+                Back to Home
+              </button>
+            </div>
+          )}
+
           <div className="text-center mb-8 animate-slide-down">
             <div className="flex items-center justify-center gap-3 mb-4 group">
               <div className="relative">
@@ -101,17 +144,20 @@ const OnboardingPage = () => {
               </h1>
             </div>
             <h2 className="text-2xl font-semibold text-[var(--text)] mb-2 animate-slide-up-delay-1">
-              Complete Your Profile
+              {isEditMode ? "Edit Your Profile" : "Complete Your Profile"}
             </h2>
             <p className="text-sm opacity-70 animate-slide-up-delay-2">
-              Tell us about yourself to find the perfect language partners
+              {isEditMode 
+                ? "Update your information and language preferences" 
+                : "Tell us about yourself to find the perfect language partners"
+              }
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm animate-shake">
-              {error.response?.data?.message || "Error completing onboarding"}
+              {error.response?.data?.message || `Error ${isEditMode ? 'updating' : 'completing'} profile`}
             </div>
           )}
 
@@ -253,13 +299,22 @@ const OnboardingPage = () => {
               {isPending ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Completing Profile...
+                  {isEditMode ? "Updating Profile..." : "Completing Profile..."}
                 </>
               ) : (
                 <>
-                  <ShipWheelIcon className="size-5 group-hover:rotate-180 transition-transform duration-500" />
-                  Complete Profile
-                  <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-300" />
+                  {isEditMode ? (
+                    <>
+                      <Save className="size-5 group-hover:scale-110 transition-transform duration-300" />
+                      Update Profile
+                    </>
+                  ) : (
+                    <>
+                      <ShipWheelIcon className="size-5 group-hover:rotate-180 transition-transform duration-500" />
+                      Complete Profile
+                      <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    </>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </>
               )}

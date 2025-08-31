@@ -6,6 +6,7 @@ import { Link } from "react-router-dom"
 import useLogin from "../hooks/useLogin"
 import { useThemeSelector } from "../hooks/useThemeSelector"
 import { FaGoogle } from "react-icons/fa"
+import toast from "react-hot-toast"
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({ email: "", password: "" })
@@ -15,6 +16,13 @@ const LoginPage = () => {
 
   const handleLogin = (e) => {
     e.preventDefault()
+    
+    // Client-side validation
+    if (!loginData.email?.trim() || !loginData.password) {
+      toast.error("Please fill in all fields")
+      return
+    }
+    
     loginMutation(loginData)
   }
 

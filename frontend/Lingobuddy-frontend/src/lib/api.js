@@ -95,3 +95,7 @@ export const renameCallRecording = async ({ callId, recordingId, newName }) => {
   return response.data;
 };
 
+export const updateProfile = async (profileData) => {
+  const response = await instance.put("/auth/profile", profileData);
+  return response.data;
+};
