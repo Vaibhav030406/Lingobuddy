@@ -18,37 +18,37 @@ const ResetPasswordPage = () => {
   const { theme } = useThemeSelector()
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email) {
-      toast.error("Email is missing. Please restart the process.")
-      return
+      toast.error("Email is missing. Please restart the process.");
+      return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match")
-      return
+      toast.error("Passwords do not match");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const res = await fetch("http://localhost:5001/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
+        body: JSON.stringify({ email, password, confirmPassword }), // Corrected line
+      });
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Failed to reset password")
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to reset password");
 
-      toast.success("Password updated successfully")
-      navigate("/login")
+      toast.success("Password updated successfully");
+      navigate("/login");
     } catch (err) {
-      toast.error(err.message)
+      toast.error(err.message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)] text-[var(--text)] p-4 transition-all duration-500">
