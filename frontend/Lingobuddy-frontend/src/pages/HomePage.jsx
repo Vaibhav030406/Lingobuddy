@@ -282,7 +282,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Debug Info (remove in production) */}
+        {/* Debug Info (remove in production)
         {process.env.NODE_ENV === 'development' && authUser && (
           <div className="bg-gray-100 p-4 rounded-lg text-sm">
             <div><strong>Debug Info:</strong></div>
@@ -293,7 +293,7 @@ const HomePage = () => {
             <div>Filtered Users: {filteredUsers.length}</div>
             <div>Filter Type: {filterType}</div>
           </div>
-        )}
+        )} */}
 
         {/* Recommended Users Section */}
         <section className="space-y-6 animate-slide-up-delay-3">
