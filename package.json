@@ -1,0 +1,21 @@
+{
+  "name": "lingobuddy",
+  "version": "1.0.0",
+  "description": "**Lingobuddy** is a language learning platform that lets users connect over real-time video chat, build friendships, and practice native and learning languages.",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install --prefix backend && npm install --prefix frontend/Lingobuddy-frontend && npm run build --prefix frontend/Lingobuddy-frontend",
+    "start": "npm run start --prefix backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vaibhav030406/Lingobuddy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Vaibhav030406/Lingobuddy/issues"
+  },
+  "homepage": "https://github.com/Vaibhav030406/Lingobuddy#readme"
+}
