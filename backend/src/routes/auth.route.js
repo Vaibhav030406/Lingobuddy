@@ -1,3 +1,5 @@
+// vaibhav030406/lingobuddy/Lingobuddy-002ab80388e8d5a8c0d2dd48e93ec91387789a95/backend/src/routes/auth.route.js
+
 import express from 'express';
 import { signup, login, logout,onboard,updateProfile } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
@@ -31,7 +33,7 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:5173/login",
+    failureRedirect: process.env.CLIENT_URL + "/login", // Use CLIENT_URL
     session: true,
   }),
   (req, res) => {
@@ -45,11 +47,11 @@ router.get(
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: "strict",
-      secure: false, // change to true in prod (HTTPS)
+      secure: process.env.NODE_ENV === "production",
     });
 
     // Redirect to frontend home after successful login
-    res.redirect("http://localhost:5173/");
+    res.redirect(process.env.CLIENT_URL); // Use CLIENT_URL
   }
 );
 
