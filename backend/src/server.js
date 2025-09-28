@@ -85,7 +85,8 @@ const corsOptions = {
         const allowedOrigins = [
             process.env.CLIENT_URL,
             'http://localhost:3000', // For development
-            'http://localhost:5001'  // For development
+            'http://localhost:5001', // For development
+            'http://localhost:5173'  // Added for Vite's default port
         ].filter(Boolean);
         
         if (allowedOrigins.includes(origin)) {

@@ -33,7 +33,7 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: process.env.CLIENT_URL + "/login", // Use CLIENT_URL
+    failureRedirect: process.env.CLIENT_URL + "/login",
     session: true,
   }),
   (req, res) => {
@@ -50,8 +50,8 @@ router.get(
       secure: process.env.NODE_ENV === "production",
     });
 
-    // Redirect to frontend home after successful login
-    res.redirect(process.env.CLIENT_URL); // Use CLIENT_URL
+    // Redirect to frontend after setting cookie
+    res.redirect(process.env.CLIENT_URL);
   }
 );
 
