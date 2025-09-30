@@ -1,5 +1,6 @@
 // frontend/Lingobuddy-frontend/src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
+import HeroPage from "./pages/HeroPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -33,12 +34,16 @@ export default function App() {
           <Route
             path="/"
             element={
-              isAuthenticated && isOnboarded ? (
-                <Layout showSidebar={true}>
-                  <HomePage />
-                </Layout>
+              isAuthenticated ? (
+                isOnboarded ? (
+                  <Layout showSidebar={true}>
+                    <HomePage />
+                  </Layout>
+                ) : (
+                  <Navigate to="/onboarding" />
+                )
               ) : (
-                <Navigate to={isAuthenticated ? "/onboarding" : "/login"} />
+                <HeroPage />
               )
             }
           />
