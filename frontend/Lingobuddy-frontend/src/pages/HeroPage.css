@@ -9,6 +9,17 @@ a, button {
   transition: all 0.3s ease;
 }
 
+/* Threads background */
+.threads-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+}
+
 /* Navigation blur effect */
 nav {
   transition: background-color 0.3s ease;
@@ -49,20 +60,7 @@ html {
   scroll-behavior: smooth;
 }
 
-.dark .hero-nav {
-  background: rgba(26, 26, 26, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #7c3aed;
-}
 
 .logo img {
   height: 2.5rem;
@@ -74,23 +72,10 @@ html {
   gap: 2rem;
 }
 
-.theme-toggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  color: inherit;
-}
 
-.light .theme-toggle {
-  color: #1a1a1a;
-}
 
-.dark .theme-toggle {
-  color: #ffffff;
-}
+
+
 
 .theme-toggle:hover {
   background: rgba(124, 58, 237, 0.1);
@@ -114,20 +99,8 @@ html {
   color: #7c3aed;
 }
 
-.sign-up-btn {
-  background: #7c3aed;
-  color: white;
-  padding: 0.65rem 1.75rem;
-  border-radius: 50px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
 
-.sign-up-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
-}
+
 
 /* Hero Section */
 .hero-section {
@@ -142,27 +115,8 @@ html {
   margin: 0 auto;
 }
 
-.hero-tagline {
-  display: block;
-  font-size: 3.5rem;
-  font-weight: 900;
-  color: #7c3aed;
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
-  animation: fadeInDown 0.8s ease-out;
-  
-}
 
-.hero-section h1 {
-  font-size: 4rem;
-  font-weight: 800;
-  margin-bottom: 1.5rem;
-  line-height: 1.15;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+
 
 @keyframes fadeInDown {
   from {
@@ -1026,10 +980,20 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
-.gradient-blinds-container {
+.threads-container {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
 }
+
+.threads-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* stays behind content */
+  pointer-events: none; /* so clicks scrolls etc work on content */
+}
+
 
