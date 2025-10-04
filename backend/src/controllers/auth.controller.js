@@ -53,7 +53,7 @@ export const signup = async (req, res) => {
          httpOnly: true,
          sameSite: "none",
          secure: true, // Always true for production with HTTPS
-         domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined
+         
       });
       res.status(201).json({ success: true, message: "User created successfully", user: newUser });
    } catch (error) {
