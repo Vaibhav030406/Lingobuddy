@@ -51,7 +51,6 @@ export const signup = async (req, res) => {
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
          httpOnly: true,
-         sameSite: "none",
          secure: true, // Always true for production with HTTPS
          
       });
@@ -86,7 +85,6 @@ export const login = async (req, res) => {
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
          httpOnly: true,
-         sameSite: "none",
          // 🎯 FIX: Check if deployed to Vercel OR if in production, assuming HTTPS in either case.
          secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, 
       });
