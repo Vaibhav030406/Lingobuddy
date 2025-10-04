@@ -157,7 +157,7 @@ const SignUpPage = () => {
 
               {/* Google OAuth Button */}
               <button
-                onClick={() => (window.location.href = "http://localhost:5001/api/auth/google")}
+                onClick={() => (window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`)}
                 type="button"
                 className="w-full bg-white text-black border border-[var(--primary)]/20 py-3 px-6 rounded-xl font-medium hover:bg-gray-100 hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl group relative overflow-hidden animate-slide-up-delay-5"
               >

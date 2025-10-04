@@ -1,4 +1,3 @@
-"use client"
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -16,7 +15,8 @@ const ForgotPasswordPage = () => {
     e.preventDefault()
     setIsLoading(true)
     try {
-      const res = await fetch("http://localhost:5001/api/auth/forgot-password", {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+      const res = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

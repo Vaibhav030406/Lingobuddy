@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Shield, ArrowRight, Languages, Sparkles } from "lucide-react"
@@ -23,7 +21,9 @@ const VerifyOtpPage = () => {
 
     setIsLoading(true)
     try {
-      const res = await fetch("http://localhost:5001/api/auth/verify-otp", {
+      // 🎯 CHANGE: Use VITE_BACKEND_URL for the production API URL
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+      const res = await fetch(`${BACKEND_URL}/api/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),

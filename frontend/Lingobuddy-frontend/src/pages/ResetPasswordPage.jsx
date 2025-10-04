@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Lock, Eye, EyeOff, ArrowRight, Languages, Sparkles } from "lucide-react"
@@ -32,10 +30,12 @@ const ResetPasswordPage = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/auth/reset-password", {
+      // 🎯 CHANGE: Use VITE_BACKEND_URL for the production API URL
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
+      const res = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, confirmPassword }), // Corrected line
+        body: JSON.stringify({ email, password, confirmPassword }),
       });
 
       const data = await res.json();
