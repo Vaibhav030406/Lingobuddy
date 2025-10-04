@@ -7,15 +7,11 @@ import session from "express-session";
 import passport from "passport";
 import "./config/passport.js";
 import { StreamClient } from '@stream-io/node-sdk';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+// Removed path, fileURLToPath, fs imports as they are no longer needed
+// after removing static file serving logic.
 
 // --- CONFIGURATION SETUP ---
 dotenv.config();
-
-// Define __dirname for ES modules
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Stream setup (moved outside of the app setup function)
 if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
@@ -102,6 +98,14 @@ const corsOptions = {
 
 const app = express();
 
+// --- DATABASE AND STREAM SETUP (RUN ONCE PER SERVERLESS COLD START) ---
+// Since this runs at the module level, Vercel executes it during a cold start.
+// This is the correct pattern for serverless MongoDB connections.
+if (process.env.VERCEL) {
+    connectDB();
+    setupStreamPermissions();
+}
+
 // --- MIDDLEWARE SETUP ---
 app.use(cors(corsOptions));
 // Trust proxy is vital for Vercel/Netlify environments to correctly read HTTPS headers
@@ -154,11 +158,8 @@ app.get('/api/test', (req, res) => {
     });
 });
 
-// --- STATIC FILE SERVING (Removed for Vercel/Netlify split) ---
+// --- ROOT ROUTE ---
 if (process.env.NODE_ENV === 'production') {
-    // This static file serving block is no longer relevant since the frontend
-    // is deployed entirely on Netlify. We remove the file system checks
-    // and just let Vercel handle the API routing defined above.
     app.get('/', (req, res) => {
         res.json({ message: 'LingoBuddy API is running successfully.' });
     });
@@ -181,13 +182,10 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 5001;
 
 // Only start the listener if not running in a serverless environment (e.g., Vercel)
-// Vercel's runtime will handle the HTTP lifecycle when exporting 'app'.
+// We also moved connectDB() outside this block for Vercel.
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, async () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-        console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
-        
+        // ConnectDB and setupStreamPermissions are called here only for local dev
         try {
             await connectDB();
             console.log('✅ Database connected');
@@ -200,6 +198,10 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
         } catch (error) {
             console.error('⚠️  Stream setup failed:', error.message);
         }
+        
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+        console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
     });
 }
 
