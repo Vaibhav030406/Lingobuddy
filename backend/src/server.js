@@ -84,6 +84,7 @@ const corsOptions = {
         
         const allowedOrigins = [
             process.env.CLIENT_URL,
+            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
             'http://localhost:3000', // For development
             'http://localhost:5001'  // For development
         ].filter(Boolean);
