@@ -11,14 +11,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
+// --- CONFIGURATION SETUP ---
+dotenv.config();
+
 // Define __dirname for ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-dotenv.config();
-
-const app = express();
-
-// Stream setup
+// Stream setup (moved outside of the app setup function)
 if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
     console.warn('⚠️  Stream API credentials not found. Recording features will be disabled.');
 }
@@ -84,7 +83,7 @@ const corsOptions = {
         
         const allowedOrigins = [
             process.env.CLIENT_URL,
-            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined, 
             'http://localhost:3000', // For development
             'http://localhost:5001'  // For development
         ].filter(Boolean);
@@ -101,9 +100,11 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 };
 
-app.use(cors(corsOptions));
+const app = express();
 
-// Trust proxy for Render
+// --- MIDDLEWARE SETUP ---
+app.use(cors(corsOptions));
+// Trust proxy is vital for Vercel/Netlify environments to correctly read HTTPS headers
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '10mb' }));
@@ -117,7 +118,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (adjusted to match JWT expiry)
     }
   })
 );
@@ -130,12 +131,12 @@ import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import chatRoutes from './routes/chat.routes.js';
 
-// API Routes
+// --- API ROUTES ---
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 
-// Health check endpoint for Render
+// Health check endpoint
 app.get('/api/health', (req, res) => {
     res.status(200).json({ 
         status: 'healthy', 
@@ -153,72 +154,54 @@ app.get('/api/test', (req, res) => {
     });
 });
 
-// Static file serving for production
+// --- STATIC FILE SERVING (Removed for Vercel/Netlify split) ---
 if (process.env.NODE_ENV === 'production') {
-    const staticPath = path.join(__dirname, '../../frontend/Lingobuddy-frontend/dist');
-    
-    if (fs.existsSync(staticPath) && fs.existsSync(path.join(staticPath, 'index.html'))) {
-        console.log('✅ Serving static files from:', staticPath);
-        
-        // Serve static files with proper caching
-        app.use(express.static(staticPath, {
-            maxAge: '1y',
-            etag: false
-        }));
-        
-        // Handle React Router (SPA routing)
-        app.get('*', (req, res) => {
-            // Don't serve index.html for API routes
-            if (req.path.startsWith('/api/')) {
-                return res.status(404).json({ error: 'API endpoint not found' });
-            }
-            
-            res.sendFile(path.join(staticPath, 'index.html'));
-        });
-        
-    } else {
-        console.error('❌ Frontend build not found at:', staticPath);
-        
-        app.get('*', (req, res) => {
-            if (req.path.startsWith('/api/')) {
-                return res.status(404).json({ error: 'API endpoint not found' });
-            }
-            res.status(503).json({ 
-                error: 'Frontend not available',
-                message: 'Frontend build not found'
-            });
-        });
-    }
+    // This static file serving block is no longer relevant since the frontend
+    // is deployed entirely on Netlify. We remove the file system checks
+    // and just let Vercel handle the API routing defined above.
+    app.get('/', (req, res) => {
+        res.json({ message: 'LingoBuddy API is running successfully.' });
+    });
 } else {
-    // Development fallback
+    // Development fallback (only runs if Node is started locally without NODE_ENV=production)
     app.get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {
-            return res.status(404).json({ error: 'API endpoint not found' });
+            // API endpoints handled above
+        } else {
+            res.json({ 
+                message: 'Development mode - run frontend separately',
+                api: 'Backend is running'
+            });
         }
-        res.json({ 
-            message: 'Development mode - run frontend separately',
-            api: 'Backend is running'
-        });
     });
 }
 
+
+// --- SERVER STARTUP LOGIC ---
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, async () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-    console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
-    
-    try {
-        await connectDB();
-        console.log('✅ Database connected');
-    } catch (error) {
-        console.error('❌ Database connection failed:', error);
-    }
-    
-    try {
-        await setupStreamPermissions();
-    } catch (error) {
-        console.error('⚠️  Stream setup failed:', error.message);
-    }
-});
+// Only start the listener if not running in a serverless environment (e.g., Vercel)
+// Vercel's runtime will handle the HTTP lifecycle when exporting 'app'.
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, async () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+        console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
+        
+        try {
+            await connectDB();
+            console.log('✅ Database connected');
+        } catch (error) {
+            console.error('❌ Database connection failed:', error);
+        }
+        
+        try {
+            await setupStreamPermissions();
+        } catch (error) {
+            console.error('⚠️  Stream setup failed:', error.message);
+        }
+    });
+}
+
+// 🎯 CRITICAL: Export the app instance for Vercel to use as a Serverless Function
+export default app;
