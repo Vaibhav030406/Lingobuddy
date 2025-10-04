@@ -4,9 +4,9 @@ import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js"
 
 export const signup = async (req, res) => {
-   const { fullName, email, password } = req.body; // Changed 'username' to 'fullName'
+   const { fullName, email, password } = req.body;
    try {
-      if (!fullName || !email || !password) { // Changed 'username' to 'fullName'
+      if (!fullName || !email || !password) {
          return res.status(400).json({ message: "Please fill all the fields" });
       }
       if (password.length < 8) {
@@ -23,39 +23,47 @@ export const signup = async (req, res) => {
       if (!process.env.JWT_SECRET_KEY) {
          return res.status(500).json({ message: "JWT secret key is not defined" });
       }
-   const firstInitial = fullName.trim().charAt(0).toUpperCase();
-    
+      
+      const firstInitial = fullName.trim().charAt(0).toUpperCase();
       const randomAvatar = `https://avatar.iran.liara.run/username?username=${firstInitial}`;
+      
       const newUser = await User.create({
-         fullName, // Changed 'username' to 'fullName'
+         fullName,
          email,
          password,
          profilePicture: randomAvatar,
       });
 
-      try{
+      try {
         await upsertStreamUser({
             id: newUser._id.toString(),
             name: newUser.fullName,
             image: newUser.profilePicture || "",
         });
         console.log(`Stream user created for ${newUser.fullName}`);
-      }
-        catch(error){
+      } catch(error) {
         console.error("Error upserting Stream user:", error);
-        }
-       const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
+      }
+      
+      const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
          expiresIn: '7d'
       });
       
+      // 🎯 FIX: Add sameSite: "none" for cross-origin cookies
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
          httpOnly: true,
-         secure: true, // Always true for production with HTTPS
-         
+         sameSite: "none", // CRITICAL for cross-origin cookies
+         secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
       });
-      res.status(201).json({ success: true, message: "User created successfully", user: newUser });
+      
+      res.status(201).json({ 
+         success: true, 
+         message: "User created successfully", 
+         user: newUser 
+      });
    } catch (error) {
+      console.error("Signup error:", error);
       return res.status(500).json({ message: "Internal server error" });
    }
 };
