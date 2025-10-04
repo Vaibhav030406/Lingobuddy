@@ -30,6 +30,7 @@ export default function App() {
 
   // ✅ Check if coming from Google OAuth redirect
   const authSuccess = searchParams.get("authSuccess");
+  const tokenFromUrl = searchParams.get("token");
 
   // ✅ Handle Google OAuth redirect with proper async flow
   useEffect(() => {
@@ -38,6 +39,12 @@ export default function App() {
         console.log("OAuth redirect detected, refetching user...");
         setIsCheckingAuth(true);
         
+        // ✅ CRITICAL: Store token from URL to localStorage
+        if (tokenFromUrl) {
+          console.log("Storing token from URL to localStorage");
+          localStorage.setItem('authToken', tokenFromUrl);
+        }
+        
         // Wait a bit for cookie to be set
         await new Promise(resolve => setTimeout(resolve, 100));
         
@@ -45,8 +52,9 @@ export default function App() {
         await queryClient.invalidateQueries(["authUser"]);
         await refetch();
         
-        // Clear the authSuccess param from URL
+        // Clear the authSuccess and token params from URL
         searchParams.delete("authSuccess");
+        searchParams.delete("token");
         setSearchParams(searchParams, { replace: true });
         
         setIsCheckingAuth(false);
@@ -54,7 +62,7 @@ export default function App() {
     };
     
     handleOAuthRedirect();
-  }, [authSuccess, refetch, queryClient, searchParams, setSearchParams]);
+  }, [authSuccess, tokenFromUrl, refetch, queryClient, searchParams, setSearchParams]);
 
   // Show loader while checking auth after OAuth redirect or during initial load
   if (isLoading || isCheckingAuth) return <PageLoader />;

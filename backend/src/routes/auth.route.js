@@ -42,18 +42,19 @@ router.get(
       expiresIn: "7d",
     });
 
-    // Set cookie
+    // ✅ Set cookie with proper configuration
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: "none",
-      secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
+      secure: true,
+      path: "/",
     });
 
-    // ✅ IMPROVED: Add token to URL as fallback and add auth success flag
+    // ✅ CRITICAL FIX: Pass token in URL as fallback since cookies may not work immediately
     const redirectUrl = user.isOnboarded
-      ? process.env.CLIENT_URL + "/?authSuccess=true"
-      : process.env.CLIENT_URL + "/onboarding?authSuccess=true";
+      ? `${process.env.CLIENT_URL}/?authSuccess=true&token=${token}`
+      : `${process.env.CLIENT_URL}/onboarding?authSuccess=true&token=${token}`;
 
     res.redirect(redirectUrl);
   }
