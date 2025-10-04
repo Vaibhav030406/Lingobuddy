@@ -24,33 +24,39 @@ import useAuthUser from "./hooks/useAuthUser";
 export default function App() {
   const { isLoading, authUser, refetch } = useAuthUser();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
   // ✅ Check if coming from Google OAuth redirect
-  const isFromGoogleOAuth = location.pathname === "/" && 
-    (searchParams.get("authSuccess") || document.referrer.includes("google"));
+  const authSuccess = searchParams.get("authSuccess");
 
-  // ✅ Force refetch when coming from Google OAuth
+  // ✅ Handle Google OAuth redirect with proper async flow
   useEffect(() => {
-    const checkAuthAfterOAuth = async () => {
-      if (isFromGoogleOAuth && !authUser) {
+    const handleOAuthRedirect = async () => {
+      if (authSuccess === "true") {
+        console.log("OAuth redirect detected, refetching user...");
         setIsCheckingAuth(true);
+        
+        // Wait a bit for cookie to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Force refetch user data
+        await queryClient.invalidateQueries(["authUser"]);
         await refetch();
+        
+        // Clear the authSuccess param from URL
+        searchParams.delete("authSuccess");
+        setSearchParams(searchParams, { replace: true });
+        
         setIsCheckingAuth(false);
       }
     };
     
-    checkAuthAfterOAuth();
-  }, [isFromGoogleOAuth, authUser, refetch]);
+    handleOAuthRedirect();
+  }, [authSuccess, refetch, queryClient, searchParams, setSearchParams]);
 
-  // ✅ Force refetch on app mount
-  useEffect(() => {
-    queryClient.invalidateQueries(["authUser"]);
-  }, [queryClient]);
-
-  // Show loader while checking auth after OAuth redirect
+  // Show loader while checking auth after OAuth redirect or during initial load
   if (isLoading || isCheckingAuth) return <PageLoader />;
 
   const isAuthenticated = Boolean(authUser);

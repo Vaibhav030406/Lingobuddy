@@ -18,10 +18,10 @@ if (isProduction) {
 
 const instance = axios.create({
   baseURL: baseURL,
-  withCredentials: true,
+  withCredentials: true, // This ensures cookies are sent with requests
 });
 
-// 🎯 NEW: Add token to requests if it exists
+// 🎯 Add token to requests if it exists (fallback for when cookies don't work)
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -31,6 +31,18 @@ instance.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 🎯 Response interceptor to handle auth errors
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear token if we get unauthorized
+      localStorage.removeItem('authToken');
+    }
     return Promise.reject(error);
   }
 );
