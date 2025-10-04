@@ -1,9 +1,5 @@
 import instance from "./axios";
 
-export const signup = async (signupData) => {
-  const response = await instance.post("/auth/signup", signupData);
-  return response.data;
-};
 
 // 💡 FIX: Ensure consistent export definition
 export const getAuthUser = async () => {
@@ -21,13 +17,28 @@ export const completeOnboarding = async (onboardingData) => {
   return response.data;
 };
 
+export const signup = async (signupData) => {
+  const response = await instance.post("/auth/signup", signupData);
+  // 🎯 NEW: Store token in localStorage
+  if (response.data.token) {
+    localStorage.setItem('authToken', response.data.token);
+  }
+  return response.data;
+};
+
 export const login = async (logindata) => {
   const response = await instance.post("/auth/login", logindata);
+  // 🎯 NEW: Store token in localStorage
+  if (response.data.token) {
+    localStorage.setItem('authToken', response.data.token);
+  }
   return response.data;
 };
 
 export const logout = async () => {
   const response = await instance.post("/auth/logout");
+  // 🎯 NEW: Remove token from localStorage
+  localStorage.removeItem('authToken');
   return response.data;
 };
 

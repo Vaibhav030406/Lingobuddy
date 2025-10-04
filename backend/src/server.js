@@ -8,10 +8,8 @@ import passport from "passport";
 import "./config/passport.js";
 import { StreamClient } from '@stream-io/node-sdk';
 
-// --- CONFIGURATION SETUP ---
 dotenv.config();
 
-// Stream setup (moved outside of the app setup function)
 if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
     console.warn('⚠️  Stream API credentials not found. Recording features will be disabled.');
 }
@@ -69,57 +67,73 @@ const setupStreamPermissions = async () => {
     }
 };
 
-// --- START OF REVISED CORS CONFIGURATION ---
-// 1. Define the production origins list
+// 🎯 CRITICAL FIX: Enhanced CORS Configuration
 const ALLOWED_ORIGINS = [
     process.env.CLIENT_URL,
-    // Add Vercel domain explicitly for development/preview/self-reference
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined, 
-    'http://localhost:3000', // Dev
-    'http://localhost:5001'  // Dev
+    'http://localhost:3000',
+    'http://localhost:5001',
+    'http://localhost:5173'
 ].filter(Boolean);
+
+console.log('🌍 Allowed CORS Origins:', ALLOWED_ORIGINS);
 
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (e.g., cURL, mobile apps, same-origin)
-        if (!origin) return callback(null, true);
+        // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
+        if (!origin) {
+            console.log('✅ CORS: Allowing request with no origin');
+            return callback(null, true);
+        }
         
         if (ALLOWED_ORIGINS.includes(origin)) {
-            // Log for successful debugging
             console.log(`✅ CORS: Allowed origin ${origin}`);
             callback(null, true);
         } else {
-            // Log for failed debugging
-            console.log(`❌ CORS: Blocked origin ${origin}. Allowed list:`, ALLOWED_ORIGINS);
+            console.log(`❌ CORS: Blocked origin ${origin}`);
+            console.log(`   Allowed origins:`, ALLOWED_ORIGINS);
             callback(new Error(`Not allowed by CORS: ${origin}`));
         }
     },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    credentials: true, // CRITICAL: Allow credentials (cookies)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'Cookie',
+        'X-Requested-With',
+        'Accept',
+        'Origin'
+    ],
+    exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie header
+    maxAge: 86400, // Cache preflight requests for 24 hours
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
-// --- END OF REVISED CORS CONFIGURATION ---
-
 
 const app = express();
 
-// --- DATABASE AND STREAM SETUP (RUN ONCE PER SERVERLESS COLD START) ---
+// 🎯 CRITICAL: Trust proxy MUST come before any other middleware
+app.set('trust proxy', 1);
+
+// Database and Stream setup for serverless
 if (process.env.VERCEL) {
     connectDB();
     setupStreamPermissions();
 }
 
-// --- MIDDLEWARE SETUP ---
-// Apply the revised CORS middleware
-app.use(cors(corsOptions)); 
-app.options('*', cors(corsOptions)); 
+// 🎯 CRITICAL: Apply CORS before any routes
+app.use(cors(corsOptions));
 
-// Trust proxy is vital for Vercel/Netlify environments to correctly read HTTPS headers
-app.set('trust proxy', 1);
+// 🎯 CRITICAL: Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
+// Parse JSON and cookies
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Session configuration
 app.use(
   session({
     secret: process.env.JWT_SECRET_KEY,
@@ -128,7 +142,8 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (adjusted to match JWT expiry)
+      sameSite: 'none', // Required for cross-origin
+      maxAge: 7 * 24 * 60 * 60 * 1000
     }
   })
 );
@@ -136,12 +151,20 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// 🎯 DEBUG: Log all incoming requests
+app.use((req, res, next) => {
+    console.log(`📥 ${req.method} ${req.path}`);
+    console.log(`   Origin: ${req.headers.origin || 'none'}`);
+    console.log(`   Cookies: ${Object.keys(req.cookies).join(', ') || 'none'}`);
+    next();
+});
+
 // Import routes
 import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import chatRoutes from './routes/chat.routes.js';
 
-// --- API ROUTES ---
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
@@ -151,7 +174,9 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ 
         status: 'healthy', 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV 
+        environment: process.env.NODE_ENV,
+        corsEnabled: true,
+        allowedOrigins: ALLOWED_ORIGINS
     });
 });
 
@@ -160,21 +185,24 @@ app.get('/api/test', (req, res) => {
     res.json({ 
         message: 'API is working!', 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
+        origin: req.headers.origin,
+        cookies: Object.keys(req.cookies)
     });
 });
 
-// --- ROOT ROUTE ---
+// Root route
 if (process.env.NODE_ENV === 'production') {
     app.get('/', (req, res) => {
-        res.json({ message: 'LingoBuddy API is running successfully.' });
+        res.json({ 
+            message: 'LingoBuddy API is running successfully.',
+            cors: 'enabled',
+            origins: ALLOWED_ORIGINS.length
+        });
     });
 } else {
-    // Development fallback (only runs if Node is started locally without NODE_ENV=production)
     app.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) {
-            // API endpoints handled above
-        } else {
+        if (!req.path.startsWith('/api/')) {
             res.json({ 
                 message: 'Development mode - run frontend separately',
                 api: 'Backend is running'
@@ -183,14 +211,11 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-
-// --- SERVER STARTUP LOGIC ---
+// Server startup
 const PORT = process.env.PORT || 5001;
 
-// Only start the listener if not running in a serverless environment (e.g., Vercel)
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, async () => {
-        // ConnectDB and setupStreamPermissions are called here only for local dev
         try {
             await connectDB();
             console.log('✅ Database connected');
@@ -207,8 +232,8 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
         console.log(`🔗 Client URL: ${process.env.CLIENT_URL}`);
+        console.log(`🍪 CORS Origins:`, ALLOWED_ORIGINS);
     });
 }
 
-// 🎯 CRITICAL: Export the app instance for Vercel to use as a Serverless Function
 export default app;

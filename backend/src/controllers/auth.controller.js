@@ -58,17 +58,21 @@ export const signup = async (req, res) => {
          expiresIn: '7d'
       });
       
-      // Use centralized cookie config
-      res.cookie("jwt", token, getCookieConfig());
+      // Still set cookie (for when/if user moves to subdomain setup)
+      res.cookie("jwt", token, {
+         maxAge: 7 * 24 * 60 * 60 * 1000,
+         httpOnly: true,
+         secure: true,
+         sameSite: 'none',
+         path: '/',
+      });
       
-      // Log for debugging
-      console.log('✅ Signup: Cookie set for user:', newUser.email);
-      console.log('Cookie config:', getCookieConfig());
-      
+      // 🎯 NEW: Also return token in response body
       res.status(201).json({ 
          success: true, 
          message: "User created successfully", 
-         user: newUser 
+         user: newUser,
+         token: token // ← Return token to frontend
       });
    } catch (error) {
       console.error("Signup error:", error);
@@ -97,26 +101,30 @@ export const login = async (req, res) => {
          expiresIn: '7d'
       });
       
-      // Use centralized cookie config
-      res.cookie("jwt", token, getCookieConfig());
-      
-      // Log for debugging
-      console.log('✅ Login: Cookie set for user:', user.email);
-      console.log('Cookie config:', getCookieConfig());
+      res.cookie("jwt", token, {
+         maxAge: 7 * 24 * 60 * 60 * 1000,
+         httpOnly: true,
+         secure: true,
+         sameSite: 'none',
+         path: '/',
+      });
       
       const userResponse = user.toObject();
       delete userResponse.password;
       
+      // 🎯 NEW: Also return token in response body
       res.status(200).json({ 
          success: true, 
          message: "User logged in successfully", 
-         user: userResponse 
+         user: userResponse,
+         token: token // ← Return token to frontend
       });
    } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({ message: "Internal server error" });
    }
 };
+
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
