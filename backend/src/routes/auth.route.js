@@ -51,10 +51,15 @@ router.get(
       secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
     });
 
-    // Redirect to frontend home after successful login
-    res.redirect(process.env.CLIENT_URL);
+    // ✅ Redirect based on onboarding status
+    const redirectUrl = user.isOnboarded
+      ? process.env.CLIENT_URL + "/"
+      : process.env.CLIENT_URL + "/onboarding";
+
+    res.redirect(redirectUrl);
   }
-); // ← Fixed: Added closing parenthesis here
+);
+// ← Fixed: Added closing parenthesis here
 
 // Test endpoint to verify cookie setting
 router.get('/test-cookie', (req, res) => {
