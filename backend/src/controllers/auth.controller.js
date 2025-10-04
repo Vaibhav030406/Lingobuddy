@@ -44,14 +44,16 @@ export const signup = async (req, res) => {
         catch(error){
         console.error("Error upserting Stream user:", error);
         }
-      const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
+       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
          expiresIn: '7d'
       });
+      
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-         httpOnly: true, // prevents client-side access
-         sameSite: "none", // helps prevent CSRF attacks
-         secure: process.env.NODE_ENV === "production", // use secure cookies in production
+         httpOnly: true,
+         sameSite: "none",
+         // 🎯 FIX: Check if deployed to Vercel OR if in production, assuming HTTPS in either case.
+         secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, 
       });
       res.status(201).json({ success: true, message: "User created successfully", user: newUser });
    } catch (error) {
@@ -80,13 +82,14 @@ export const login = async (req, res) => {
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
          expiresIn: '7d'
       });
+      
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
          httpOnly: true,
          sameSite: "none",
-         secure: process.env.NODE_ENV === "production",
+         // 🎯 FIX: Check if deployed to Vercel OR if in production, assuming HTTPS in either case.
+         secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, 
       });
-
       // Remove password from response
       const userResponse = user.toObject();
       delete userResponse.password;

@@ -29,7 +29,6 @@ router.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Google OAuth Callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -46,13 +45,13 @@ router.get(
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none", // 🎯 FIX: Must be "none" for cross-site redirection
+      // 🎯 FIX: Check if deployed to Vercel OR if in production
+      secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
     });
 
     // Redirect to frontend home after successful login
-    res.redirect(process.env.CLIENT_URL); // Use CLIENT_URL
+    res.redirect(process.env.CLIENT_URL);
   }
 );
-
 export default router;
