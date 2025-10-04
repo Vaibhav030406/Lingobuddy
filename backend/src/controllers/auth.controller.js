@@ -50,7 +50,7 @@ export const signup = async (req, res) => {
       res.cookie("jwt", token, {
          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
          httpOnly: true, // prevents client-side access
-         sameSite: "strict", // helps prevent CSRF attacks
+         sameSite: "none", // helps prevent CSRF attacks
          secure: process.env.NODE_ENV === "production", // use secure cookies in production
       });
       res.status(201).json({ success: true, message: "User created successfully", user: newUser });
