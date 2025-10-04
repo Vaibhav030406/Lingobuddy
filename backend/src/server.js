@@ -7,8 +7,6 @@ import session from "express-session";
 import passport from "passport";
 import "./config/passport.js";
 import { StreamClient } from '@stream-io/node-sdk';
-// Removed path, fileURLToPath, fs imports as they are no longer needed
-// after removing static file serving logic.
 
 // --- CONFIGURATION SETUP ---
 dotenv.config();
@@ -71,43 +69,50 @@ const setupStreamPermissions = async () => {
     }
 };
 
-// CORS configuration for production
+// --- START OF REVISED CORS CONFIGURATION ---
+// 1. Define the production origins list
+const ALLOWED_ORIGINS = [
+    process.env.CLIENT_URL,
+    // Add Vercel domain explicitly for development/preview/self-reference
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined, 
+    'http://localhost:3000', // Dev
+    'http://localhost:5001'  // Dev
+].filter(Boolean);
+
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, etc.)
+        // Allow requests with no origin (e.g., cURL, mobile apps, same-origin)
         if (!origin) return callback(null, true);
         
-        const allowedOrigins = [
-            process.env.CLIENT_URL,
-            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined, 
-            'http://localhost:3000', // For development
-            'http://localhost:5001'  // For development
-        ].filter(Boolean);
-        
-        if (allowedOrigins.includes(origin)) {
+        if (ALLOWED_ORIGINS.includes(origin)) {
+            // Log for successful debugging
+            console.log(`✅ CORS: Allowed origin ${origin}`);
             callback(null, true);
         } else {
-            console.log('❌ CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+            // Log for failed debugging
+            console.log(`❌ CORS: Blocked origin ${origin}. Allowed list:`, ALLOWED_ORIGINS);
+            callback(new Error(`Not allowed by CORS: ${origin}`));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 };
+// --- END OF REVISED CORS CONFIGURATION ---
+
 
 const app = express();
 
 // --- DATABASE AND STREAM SETUP (RUN ONCE PER SERVERLESS COLD START) ---
-// Since this runs at the module level, Vercel executes it during a cold start.
-// This is the correct pattern for serverless MongoDB connections.
 if (process.env.VERCEL) {
     connectDB();
     setupStreamPermissions();
 }
 
 // --- MIDDLEWARE SETUP ---
-app.use(cors(corsOptions));
+// Apply the revised CORS middleware
+app.use(cors(corsOptions)); 
+
 // Trust proxy is vital for Vercel/Netlify environments to correctly read HTTPS headers
 app.set('trust proxy', 1);
 
@@ -182,7 +187,6 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 5001;
 
 // Only start the listener if not running in a serverless environment (e.g., Vercel)
-// We also moved connectDB() outside this block for Vercel.
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, async () => {
         // ConnectDB and setupStreamPermissions are called here only for local dev
