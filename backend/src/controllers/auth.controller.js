@@ -1,7 +1,16 @@
 import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import { sendEmail } from "../utils/sendEmail.js"
+import { sendEmail } from "../utils/sendEmail.js";
+
+// Centralized cookie configuration
+const getCookieConfig = () => ({
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  httpOnly: true,
+  secure: true, // Always true for production (Netlify + Vercel both use HTTPS)
+  sameSite: 'none', // Required for cross-origin cookies
+  path: '/',
+});
 
 export const signup = async (req, res) => {
    const { fullName, email, password } = req.body;
@@ -49,13 +58,12 @@ export const signup = async (req, res) => {
          expiresIn: '7d'
       });
       
-      // 🎯 FIX: Add sameSite: "none" for cross-origin cookies
-      res.cookie("jwt", token, {
-         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-         httpOnly: true,
-         sameSite: "none", // CRITICAL for cross-origin cookies
-         secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
-      });
+      // Use centralized cookie config
+      res.cookie("jwt", token, getCookieConfig());
+      
+      // Log for debugging
+      console.log('✅ Signup: Cookie set for user:', newUser.email);
+      console.log('Cookie config:', getCookieConfig());
       
       res.status(201).json({ 
          success: true, 
@@ -68,7 +76,6 @@ export const signup = async (req, res) => {
    }
 };
 
-// In backend/src/controllers/auth.controller.js
 export const login = async (req, res) => {
    try {
       const { email, password } = req.body;
@@ -90,22 +97,28 @@ export const login = async (req, res) => {
          expiresIn: '7d'
       });
       
-      res.cookie("jwt", token, {
-         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-         httpOnly: true,
-         // 🎯 FIX: Check if deployed to Vercel OR if in production, assuming HTTPS in either case.
-         secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, 
-      });
-      // Remove password from response
+      // Use centralized cookie config
+      res.cookie("jwt", token, getCookieConfig());
+      
+      // Log for debugging
+      console.log('✅ Login: Cookie set for user:', user.email);
+      console.log('Cookie config:', getCookieConfig());
+      
       const userResponse = user.toObject();
       delete userResponse.password;
       
-      res.status(200).json({ success: true, message: "User logged in successfully", user: userResponse });
+      res.status(200).json({ 
+         success: true, 
+         message: "User logged in successfully", 
+         user: userResponse 
+      });
    } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({ message: "Internal server error" });
    }
-};export const forgotPassword = async (req, res) => {
+};
+
+export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   if (!email) return res.status(400).json({ message: "Email is required" });
@@ -122,7 +135,6 @@ export const login = async (req, res) => {
     user.resetOtpExpiry = Date.now() + 10 * 60 * 1000; // 10 min
     await user.save();
 
-    // 🔥 Send the OTP via email
     await sendEmail(email, "LingoBuddy OTP", `Your OTP is: ${otp}`);
 
     res.status(200).json({ success: true, message: "OTP sent to your email" });
@@ -154,7 +166,6 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP has expired" });
     }
 
-    // Optional: Clear OTP after success (to prevent reuse)
     user.resetOtp = null;
     user.resetOtpExpiry = null;
     await user.save();
@@ -166,6 +177,7 @@ export const verifyOtp = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 export const resetPassword = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
 
@@ -188,7 +200,7 @@ export const resetPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.password = password; // Will be hashed if you use a pre-save hook
+    user.password = password;
     user.resetOtp = null;
     user.resetOtpExpiry = null;
     await user.save();
@@ -201,45 +213,64 @@ export const resetPassword = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-   res.clearCookie("jwt");
+   res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+   });
    res.status(200).json({ success: true, message: "User logged out successfully" });
 };
+
 export const onboard = async (req, res) => {
-    try{
+    try {
         const userId = req.user._id;
-        const {fullName,bio,nativeLanguage,learningLanguage,location,profilePicture} = req.body;
-        if(!fullName || !bio || !nativeLanguage || !learningLanguage || !location){
-            return res.status(400).json({message: "Please fill all the fields"})
+        const { fullName, bio, nativeLanguage, learningLanguage, location, profilePicture } = req.body;
+        
+        if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
+            return res.status(400).json({ message: "Please fill all the fields" });
         }
+        
         const updatedUser = await User.findByIdAndUpdate(userId, {
-        ...req.body,
-        isOnboarded: true
-    }, { new: true });
-        if(!updatedUser){
-            return res.status(404).json({message: "User not found"})
+            ...req.body,
+            isOnboarded: true
+        }, { new: true });
+        
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
         }
-        try{
+        
+        try {
             await upsertStreamUser({
                 id: updatedUser._id.toString(),
                 name: updatedUser.fullName,
                 image: updatedUser.profilePicture || "",
-            })
+            });
             console.log(`Stream user upserted for ${updatedUser.fullName}`);
         } catch (error) {
             console.error("Error upserting Stream user:", error);
         }
-        res.status(200).json({success: true, message: "User onboarded successfully", user: updatedUser});
+        
+        res.status(200).json({ 
+            success: true, 
+            message: "User onboarded successfully", 
+            user: updatedUser 
+        });
     } catch (error) {
         console.error("Error during onboarding:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
+
 export const updateProfile = async (req, res) => {
     try {
         const userId = req.user._id;
         const { fullName, bio, nativeLanguage, learningLanguage, location, profilePicture } = req.body;
 
-        const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true, runValidators: true }).select("-password");
+        const updatedUser = await User.findByIdAndUpdate(userId, req.body, { 
+            new: true, 
+            runValidators: true 
+        }).select("-password");
 
         if (!updatedUser) {
             return res.status(404).json({ message: "User not found" });
@@ -256,7 +287,11 @@ export const updateProfile = async (req, res) => {
             console.error("Error upserting Stream user:", error);
         }
 
-        res.status(200).json({ success: true, message: "Profile updated successfully", user: updatedUser });
+        res.status(200).json({ 
+            success: true, 
+            message: "Profile updated successfully", 
+            user: updatedUser 
+        });
     } catch (error) {
         console.error("Error during profile update:", error);
         return res.status(500).json({ message: "Internal server error" });

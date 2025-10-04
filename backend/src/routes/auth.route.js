@@ -1,28 +1,30 @@
 // vaibhav030406/lingobuddy/Lingobuddy-002ab80388e8d5a8c0d2dd48e93ec91387789a95/backend/src/routes/auth.route.js
 
 import express from 'express';
-import { signup, login, logout,onboard,updateProfile } from '../controllers/auth.controller.js';
+import { signup, login, logout, onboard, updateProfile } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 import { forgotPassword } from '../controllers/auth.controller.js';
 import { verifyOtp } from '../controllers/auth.controller.js';
 import { resetPassword } from '../controllers/auth.controller.js';
 import passport from "passport";
 import jwt from "jsonwebtoken";
+
 const router = express.Router();
 
-router.post('/signup',signup);
+router.post('/signup', signup);
 router.post('/login', login);
 router.post('/logout', logout);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-otp', verifyOtp);
-router.post('/reset-password',resetPassword)
+router.post('/reset-password', resetPassword);
 
-router.post('/onboarding',protectRoute,onboard);
+router.post('/onboarding', protectRoute, onboard);
 router.put('/profile', protectRoute, updateProfile);
-//check if user is logged in or not
-router.get('/me',protectRoute,(req,res,next)=>{
-    res.status(200).json(req.user) // Return user directly, not wrapped in success object
-})
+
+// Check if user is logged in or not
+router.get('/me', protectRoute, (req, res, next) => {
+    res.status(200).json(req.user); // Return user directly, not wrapped in success object
+});
 
 router.get(
   "/google",
@@ -32,7 +34,7 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: process.env.CLIENT_URL + "/login", // Use CLIENT_URL
+    failureRedirect: process.env.CLIENT_URL + "/login",
     session: true,
   }),
   (req, res) => {
@@ -45,13 +47,51 @@ router.get(
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "none", // 🎯 FIX: Must be "none" for cross-site redirection
-      // 🎯 FIX: Check if deployed to Vercel OR if in production
+      sameSite: "none",
       secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
     });
 
     // Redirect to frontend home after successful login
     res.redirect(process.env.CLIENT_URL);
   }
-);
+); // ← Fixed: Added closing parenthesis here
+
+// Test endpoint to verify cookie setting
+router.get('/test-cookie', (req, res) => {
+    const testToken = 'test-token-12345';
+    
+    res.cookie('test-jwt', testToken, {
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        path: '/',
+    });
+    
+    res.json({
+        success: true,
+        message: 'Test cookie set',
+        cookieConfig: {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        },
+        headers: res.getHeaders(),
+    });
+});
+
+// Test endpoint to verify cookie reading
+router.get('/verify-cookie', (req, res) => {
+    const cookies = req.cookies;
+    
+    res.json({
+        success: true,
+        message: 'Cookie check',
+        hasCookie: !!cookies.jwt,
+        hasTestCookie: !!cookies['test-jwt'],
+        allCookies: Object.keys(cookies),
+    });
+});
+
 export default router;
