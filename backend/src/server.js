@@ -112,6 +112,7 @@ if (process.env.VERCEL) {
 // --- MIDDLEWARE SETUP ---
 // Apply the revised CORS middleware
 app.use(cors(corsOptions)); 
+app.options('*', cors(corsOptions)); 
 
 // Trust proxy is vital for Vercel/Netlify environments to correctly read HTTPS headers
 app.set('trust proxy', 1);
