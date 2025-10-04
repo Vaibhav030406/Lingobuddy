@@ -5,8 +5,10 @@ const useAuthUser = () => {
   const authUserQuery = useQuery({
     queryKey: ["authUser"],
     queryFn: getAuthUser,
-    retry: 2,
+    retry: 1, // Reduced retry attempts
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: true, // Always refetch on mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Handle different response formats from backend

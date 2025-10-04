@@ -1,5 +1,3 @@
-// vaibhav030406/lingobuddy/Lingobuddy-002ab80388e8d5a8c0d2dd48e93ec91387789a95/backend/src/routes/auth.route.js
-
 import express from 'express';
 import { signup, login, logout, onboard, updateProfile } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
@@ -23,7 +21,7 @@ router.put('/profile', protectRoute, updateProfile);
 
 // Check if user is logged in or not
 router.get('/me', protectRoute, (req, res, next) => {
-    res.status(200).json(req.user); // Return user directly, not wrapped in success object
+    res.status(200).json(req.user);
 });
 
 router.get(
@@ -44,6 +42,7 @@ router.get(
       expiresIn: "7d",
     });
 
+    // Set cookie
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
@@ -51,15 +50,14 @@ router.get(
       secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL,
     });
 
-    // ✅ Redirect based on onboarding status
+    // ✅ IMPROVED: Add token to URL as fallback and add auth success flag
     const redirectUrl = user.isOnboarded
-      ? process.env.CLIENT_URL + "/"
-      : process.env.CLIENT_URL + "/onboarding";
+      ? process.env.CLIENT_URL + "/?authSuccess=true"
+      : process.env.CLIENT_URL + "/onboarding?authSuccess=true";
 
     res.redirect(redirectUrl);
   }
 );
-// ← Fixed: Added closing parenthesis here
 
 // Test endpoint to verify cookie setting
 router.get('/test-cookie', (req, res) => {

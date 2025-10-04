@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route, Navigate, useSearchParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import HeroPage from "./pages/HeroPage";
@@ -22,23 +22,36 @@ import { Toaster } from "react-hot-toast";
 import useAuthUser from "./hooks/useAuthUser";
 
 export default function App() {
-  const { isLoading, authUser } = useAuthUser();
+  const { isLoading, authUser, refetch } = useAuthUser();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
-  // ✅ Force refetch on app mount (important after Google redirect)
+  // ✅ Check if coming from Google OAuth redirect
+  const isFromGoogleOAuth = location.pathname === "/" && 
+    (searchParams.get("authSuccess") || document.referrer.includes("google"));
+
+  // ✅ Force refetch when coming from Google OAuth
+  useEffect(() => {
+    const checkAuthAfterOAuth = async () => {
+      if (isFromGoogleOAuth && !authUser) {
+        setIsCheckingAuth(true);
+        await refetch();
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuthAfterOAuth();
+  }, [isFromGoogleOAuth, authUser, refetch]);
+
+  // ✅ Force refetch on app mount
   useEffect(() => {
     queryClient.invalidateQueries(["authUser"]);
   }, [queryClient]);
 
-  // ✅ Optional: force refetch if redirected after Google OAuth
-  useEffect(() => {
-    if (searchParams.get("authSuccess")) {
-      queryClient.invalidateQueries(["authUser"]);
-    }
-  }, [searchParams, queryClient]);
-
-  if (isLoading) return <PageLoader />;
+  // Show loader while checking auth after OAuth redirect
+  if (isLoading || isCheckingAuth) return <PageLoader />;
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;
@@ -57,7 +70,7 @@ export default function App() {
                     <HomePage />
                   </Layout>
                 ) : (
-                  <Navigate to="/onboarding" />
+                  <Navigate to="/onboarding" replace />
                 )
               ) : (
                 <HeroPage />
@@ -72,7 +85,7 @@ export default function App() {
               !isAuthenticated ? (
                 <SignupPage />
               ) : (
-                <Navigate to={isOnboarded ? "/" : "/onboarding"} />
+                <Navigate to={isOnboarded ? "/" : "/onboarding"} replace />
               )
             }
           />
@@ -82,7 +95,7 @@ export default function App() {
               !isAuthenticated ? (
                 <LoginPage />
               ) : (
-                <Navigate to={isOnboarded ? "/" : "/onboarding"} />
+                <Navigate to={isOnboarded ? "/" : "/onboarding"} replace />
               )
             }
           />
@@ -95,10 +108,10 @@ export default function App() {
                 !isOnboarded ? (
                   <OnboardingPage />
                 ) : (
-                  <Navigate to="/" />
+                  <Navigate to="/" replace />
                 )
               ) : (
-                <Navigate to="/login" />
+                <Navigate to="/login" replace />
               )
             }
           />
@@ -110,7 +123,7 @@ export default function App() {
                   <OnboardingPage />
                 </Layout>
               ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} replace />
               )
             }
           />
@@ -124,7 +137,7 @@ export default function App() {
                   <FriendsPage />
                 </Layout>
               ) : (
-                <Navigate to={isAuthenticated ? "/onboarding" : "/login"} />
+                <Navigate to={isAuthenticated ? "/onboarding" : "/login"} replace />
               )
             }
           />
@@ -138,7 +151,7 @@ export default function App() {
                   <NotificationsPage />
                 </Layout>
               ) : (
-                <Navigate to="/login" />
+                <Navigate to="/login" replace />
               )
             }
           />
@@ -152,7 +165,7 @@ export default function App() {
                   <ChatPage />
                 </Layout>
               ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} replace />
               )
             }
           />
@@ -162,7 +175,7 @@ export default function App() {
               isAuthenticated && isOnboarded ? (
                 <CallPage />
               ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} replace />
               )
             }
           />
@@ -176,7 +189,7 @@ export default function App() {
                   <RecordingsPage />
                 </Layout>
               ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} replace />
               )
             }
           />
@@ -187,7 +200,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       <Toaster />
