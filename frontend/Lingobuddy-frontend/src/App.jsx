@@ -201,7 +201,6 @@ export default function App() {
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
-          <Route path="/auth/loading" element={<AuthLoading />} />
 
         </Routes>
       </div>
